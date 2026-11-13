@@ -34,7 +34,7 @@ canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
 <script src="three.min.js"></script><script>if(!window.THREE){try{var _x=new XMLHttpRequest();_x.open("GET","https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js",false);_x.send();(0,eval)(_x.responseText)}catch(e){console.error("three.js не загрузился",e)}}</script>
 <script src="logic/audio.js"></script>
 <script src="ui/pause.js"></script>
-<script src="logic/intro.js"></script>
+<script src="ui/splash.js"></script><script src="logic/intro.js"></script>
 <script src="graphics/fx.js"></script>
 <script>(function(){var m=[];if(typeof sfx=='undefined')m.push('audio.js');if(typeof pauseOpen=='undefined')m.push('pause.js');if(typeof startCall=='undefined')m.push('intro.js');if(typeof fxFrame=='undefined')m.push('fx.js');if(m.length){var d=document.createElement('div');d.style.cssText='position:fixed;inset:0;z-index:99;background:#05060a;color:#f87171;font:18px system-ui,sans-serif;display:flex;align-items:center;justify-content:center;text-align:center;padding:30px';d.textContent='Не найдены файлы: '+m.join(', ')+'. Положите их рядом с index.html (в репозитории и в package.json в списке files).';document.documentElement.appendChild(d)}})()</script>
 <script>
@@ -88,7 +88,7 @@ function ld(k){try{return JSON.parse(localStorage.getItem(k||'pcv3'))}catch(e){r
 try{Object.assign(opt,JSON.parse(localStorage.getItem('pcopt')||'{}'))}catch(e){}
 function optSave(){try{localStorage.setItem('pcopt',JSON.stringify(opt))}catch(e){}}
 /* ===== рендер и помощники ===== */
-const R=new THREE.WebGLRenderer({antialias:true});R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.0;R.outputEncoding=THREE.sRGBEncoding;
+const R=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});R.shadowMap.enabled=true;R.shadowMap.type=THREE.PCFSoftShadowMap;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=1.0;R.outputEncoding=THREE.sRGBEncoding;
 $('w').prepend(R.domElement);R.domElement.style.filter='contrast(1.02) saturate(1.05)';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0x05060a);scene.fog=new THREE.Fog(0x05060a,16,36);
 const cam=new THREE.PerspectiveCamera(70,1,.1,60);cam.rotation.order='YXZ';scene.add(cam);const clock=new THREE.Clock();

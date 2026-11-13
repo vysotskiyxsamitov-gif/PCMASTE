@@ -19,6 +19,7 @@
       } catch (e) { }
       return _r(s, c);
     };
+    var _ns = 0, _nt = setInterval(function () { try { ST.traverse(function (o) { if (o.isMesh && o.castShadow) o.castShadow = false; }); } catch (e) { } if (++_ns > 40) clearInterval(_nt); }, 3000);
     window.__cullInfo = function () { return { улицаВидна: ST.visible, скрытийУлицы: hid }; };
     return true;
   }
