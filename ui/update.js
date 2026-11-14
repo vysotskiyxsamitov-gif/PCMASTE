@@ -1,5 +1,5 @@
 /* Плашка обновления внутри игры (только в приложении Electron; в браузере и на телефоне ничего не делает).
-   Приложение само проверяет сайт; тут только показ и кнопки: «Обновить» → скачивание → «Перезапустить». */
+   Приложение само проверяет сайт; тут только показ и кнопки: автоскачивание в фоне → «Перезапустить» (или поставится при выходе из игры). */
 (function () {
   if (!window.pcApp || !window.pcApp.onUpdate) return;
   var el = document.createElement('div');
@@ -12,7 +12,8 @@
     if (!st || st.hide) { el.style.display = 'none'; return; }
     el.style.display = 'block'; el.innerHTML = '';
     var t = document.createElement('div');
-    if (st.state === 'available') {
+    if (st.state === 'available') { el.style.display = 'none'; return; }   // скачивание идёт само в фоне, показываем только готовое
+    if (false) {
       t.innerHTML = '<b>Доступно обновление ' + (st.version || '') + '</b><div style="opacity:.75">Сохранение не потеряется.</div>' + hint(); el.appendChild(t);
       el.appendChild(btn('Обновить', function () { st = { state: 'progress', percent: 0 }; draw(); window.pcApp.downloadUpdate(); }, 1));
       el.appendChild(btn('Позже', function () { st.hide = 1; draw(); }));

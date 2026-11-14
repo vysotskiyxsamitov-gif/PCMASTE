@@ -48,7 +48,7 @@ let mainWin = null;
 function sendUpd(o) { try { if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send('pc-update', o); } catch (e) {} }
 function setupUpdater() {
   if (!autoUpdater || !app.isPackaged) return;
-  autoUpdater.autoDownload = false;            // сначала спрашиваем игрока
+  autoUpdater.autoDownload = true;             // новая версия скачивается сама в фоне
   autoUpdater.autoInstallOnAppQuit = true;     // если скачал и просто закрыл игру — поставится при выходе
   autoUpdater.on('update-available', (i) => sendUpd({ state: 'available', version: i && i.version }));
   autoUpdater.on('download-progress', (p) => sendUpd({ state: 'progress', percent: Math.round(p.percent || 0) }));
