@@ -6,7 +6,7 @@
     if (typeof R === 'undefined' || typeof scene === 'undefined' || !window.__W || !window.__W.ST || window.__cullInit) return false;
     window.__cullInit = true;
     var ST = window.__W.ST, fr = new THREE.Frustum(), pm = new THREE.Matrix4(),
-      box = new THREE.Box3(new THREE.Vector3(-10.5, -.5, 7.2), new THREE.Vector3(10.5, 11, 9)),   // передняя стена с окнами и дверью
+      box = new THREE.Box3(new THREE.Vector3(-12, -.5, 6), new THREE.Vector3(12, 11, 10)),   // передняя стена с окнами и дверью
       hid = 0, _r = R.render.bind(R);
     R.render = function (s, c) {
       try {

@@ -11,7 +11,7 @@
   function ok() { try { return typeof THREE !== 'undefined' && !!scene; } catch (e) { return false; } }
   function chainVisible(o) { for (; o; o = o.parent) if (o.visible === false) return false; return true; }
   function chainClean(o) {
-    for (var p = o.parent; p; p = p.parent) { if (p.isScene) break; if (p.userData && (p.userData.act || p.userData.sec || p.userData.dyn || p.userData.keep)) return false; if (p.isCamera || p.isLight) return false; }
+    for (var p = o.parent; p; p = p.parent) { if (p.isScene) break; if (window.__W && p === window.__W.ST) return false; if (p.userData && (p.userData.act || p.userData.sec || p.userData.dyn || p.userData.keep)) return false; if (p.isCamera || p.isLight) return false; }
     return true;
   }
   function why(o) {
@@ -219,7 +219,8 @@
   }
   /* счётчик нагрузки: FPS, вызовы отрисовки, треугольники */
   var hudEl = null, hudOn = false, frames = 0, tPrev = performance.now(), fps = 0;
-  (function tick() { requestAnimationFrame(tick); frames++; var n = performance.now(); if (n - tPrev >= 500) { fps = Math.round(frames * 1000 / (n - tPrev)); frames = 0; tPrev = n; if (hudOn && hudEl) { var i = (typeof R !== 'undefined' && R.info) ? R.info : null; hudEl.textContent = fps + ' FPS\nвызовов ' + (i ? i.render.calls : '?') + '\nтреугольников ' + (i ? i.render.triangles : '?') + '\nобъектов ' + (i ? i.memory.geometries : '?') + (done && stat.out ? '\nсклеено ' + stat.src + '→' + stat.out : ''); try { var b = breakdown(false); if (b) hudEl.textContent += '\nв кадре: мешей ' + b.mesh + ' (≈' + b.calls + ' выз.)\nпрозрачных ' + b.trans + ', спрайтов ' + b.sprite + '\nтени: кастеров ' + b.cast + ', света с тенью ' + b.shLights + '\nотказы склейки: ' + reasonsLine(); } catch (e) { } } } })();
+  var mxF = 0, mxT = performance.now(), mxShow = 0, lastF = performance.now();
+  (function tick() { requestAnimationFrame(tick); frames++; var n = performance.now(); var df = n - lastF; lastF = n; if (df > mxF) mxF = df; if (n - mxT > 10000) { mxShow = mxF; mxF = 0; mxT = n; } if (n - tPrev >= 500) { fps = Math.round(frames * 1000 / (n - tPrev)); frames = 0; tPrev = n; if (hudOn && hudEl) { var i = (typeof R !== 'undefined' && R.info) ? R.info : null; hudEl.textContent = fps + ' FPS\nвызовов ' + (i ? i.render.calls : '?') + '\nтреугольников ' + (i ? i.render.triangles : '?') + '\nобъектов ' + (i ? i.memory.geometries : '?') + (done && stat.out ? '\nсклеено ' + stat.src + '→' + stat.out : '') + '\nсамый долгий кадр за 10 с: ' + Math.round(Math.max(mxShow, mxF)) + ' мс'; try { var b = breakdown(false); if (b) hudEl.textContent += '\nв кадре: мешей ' + b.mesh + ' (≈' + b.calls + ' выз.)\nпрозрачных ' + b.trans + ', спрайтов ' + b.sprite + '\nтени: кастеров ' + b.cast + ', света с тенью ' + b.shLights + '\nотказы склейки: ' + reasonsLine(); } catch (e) { } } } })();
   function hud(v) {
     hudOn = v === undefined ? !hudOn : !!v;
     if (hudOn && !hudEl) { hudEl = document.createElement('pre'); hudEl.style.cssText = 'position:fixed;left:max(8px,env(safe-area-inset-left,0px));top:max(8px,env(safe-area-inset-top,0px));margin:0;padding:6px 9px;border-radius:8px;background:rgba(0,0,0,.6);color:#7cf0b2;font:12px/1.35 Consolas,monospace;z-index:99998;pointer-events:none;white-space:pre'; document.body.appendChild(hudEl); }
