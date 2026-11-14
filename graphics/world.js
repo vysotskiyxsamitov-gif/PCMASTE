@@ -455,7 +455,7 @@
       var kind = pick(['sedan', 'sedan', 'hatch', 'van']), g = mkCar(pick(CARC), kind);
       var v = R2(15, 24); g.position.set(ln.dir > 0 ? -118 : 118, 0, ln.z); g.rotation.y = ln.dir > 0 ? 0 : PI;
       ST.add(g); cars.push({ g: g, ln: ln, v: v, v0: v, whoosh: 0 });
-      ln.gap = R2(26, 70);
+      ln.gap = R2(110, 280);   // реже: машина раз в 6–15 секунд на полосе
     }
     function updCars(dt) {
       var busy = TM.h > 21 ? .5 : 1;

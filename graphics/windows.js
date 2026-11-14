@@ -53,6 +53,39 @@
       fb(.1, H, .14, cx, cy, Z - .08); fb(W, .09, .14, cx, cy + .5, Z - .08);
       fb(W + .6, .14, .5, cx, WY0 - .12, Z - .3);                               // подоконник
     });
+    // оформление стены: вывеска над окнами, плакаты на простенках, неоновые полосы по краям (раньше это были гладкие панели)
+    try {
+      function dPlane(w, h, x, y, tex, rough) { var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshStandardMaterial({ map: tex, roughness: rough || .8, metalness: .05 })); m.position.set(x, y, Z - .035); m.rotation.y = Math.PI; m.receiveShadow = true; scene.add(m); return m; }
+      function rr(x, a, b, w, h, r) { x.beginPath(); x.moveTo(a + r, b); x.arcTo(a + w, b, a + w, b + h, r); x.arcTo(a + w, b + h, a, b + h, r); x.arcTo(a, b + h, a, b, r); x.arcTo(a, b, a + w, b, r); x.closePath(); }
+      var band = ['СБОРКА ПК НА ЗАКАЗ', 'РЕМОНТ · АПГРЕЙД · ГАРАНТИЯ'];
+      [-6, 6].forEach(function (cx, bi) {
+        var t = ct(1024, 320, function (x, W, H) {
+          x.fillStyle = '#161b2a'; x.fillRect(0, 0, W, H);
+          for (var i = 0; i < 14; i++) { x.fillStyle = i % 2 ? '#1c2336' : '#141a29'; x.fillRect(0, i * 24 + 4, W, 22); }
+          x.strokeStyle = '#22d3ee'; x.lineWidth = 6; rr(x, 22, 22, W - 44, H - 44, 26); x.stroke();
+          x.shadowColor = '#22d3ee'; x.shadowBlur = 24; x.fillStyle = '#e9fbff'; x.font = '800 78px system-ui,Segoe UI,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
+          x.fillText(band[bi], W / 2, H / 2 - 12); x.shadowBlur = 0; x.fillStyle = '#a855f7'; x.fillRect(W / 2 - 180, H - 82, 360, 6);
+        }, 1, 1);
+        dPlane(5.6, 1.75, cx, 6.7, t, .55);
+      });
+      var posters = [[['ХИТ', 'ПРОДАЖ'], '#f97316', 'сборки от $399'], [['RAM', 'DDR5'], '#22d3ee', 'в наличии'], [['SSD', 'NVMe'], '#a855f7', 'скорость x10'], [['БЛОК', 'ПИТАНИЯ'], '#22c55e', 'от 450 Вт']];
+      [[-2.25, 0], [2.25, 1]].forEach(function (c) {
+        for (var k = 0; k < 2; k++) (function (pdef, kk) {
+          var t = ct(256, 340, function (x, W, H) {
+            x.fillStyle = '#10141f'; x.fillRect(0, 0, W, H); x.fillStyle = pdef[1]; x.fillRect(0, 0, W, 14);
+            x.strokeStyle = 'rgba(255,255,255,.25)'; x.lineWidth = 3; x.strokeRect(10, 24, W - 20, H - 34);
+            x.fillStyle = pdef[1]; x.globalAlpha = .18; x.beginPath(); x.arc(W / 2, 140, 78, 0, 6.283); x.fill(); x.globalAlpha = 1;
+            x.fillStyle = '#fff'; x.textAlign = 'center'; x.font = '800 46px system-ui,Segoe UI,sans-serif'; x.fillText(pdef[0][0], W / 2, 120); x.fillText(pdef[0][1], W / 2, 172);
+            x.font = '600 22px system-ui,Segoe UI,sans-serif'; x.fillStyle = pdef[1]; x.fillText(pdef[2], W / 2, 290);
+          }, 1, 1);
+          dPlane(1.05, 1.4, c[0], 2.95 + kk * 1.75, t, .7);
+        })(posters[c[1] * 2 + k], k);
+      });
+      var nm = new THREE.MeshBasicMaterial({ color: 0x22d3ee });
+      [-9.5, 9.5].forEach(function (cx) { var n = new THREE.Mesh(new THREE.BoxGeometry(.07, 5.6, .05), nm); n.position.set(cx, 3.9, Z - .045); scene.add(n); });
+      var ft2 = ct(128, 128, function (x, W, H) { x.fillStyle = '#1b2236'; x.fillRect(0, 0, W, H); x.strokeStyle = 'rgba(255,255,255,.12)'; x.lineWidth = 2; x.strokeRect(10, 10, W - 20, H - 20); }, 1, 4);
+      [-9.5, 9.5].forEach(function (cx) { dPlane(.8, 4.3, cx + (cx < 0 ? .0 : .0), 3.65, ft2, .85).position.z = Z - .03; });
+    } catch (e) { console.warn('[windows] оформление стены', e); }
     // дверь: тоньше рамы, стекло ещё прозрачнее
     try { [doorL, doorR].forEach(function (d) { d.material.opacity = .14; }); } catch (e) { }
     console.log('[windows] готово');

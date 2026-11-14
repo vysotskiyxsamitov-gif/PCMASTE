@@ -21,6 +21,9 @@
       { k: 'mb', code: '−−', L: 'M', t: 'Не запускается, иногда искрит', n: 'Ошибка материнской платы', sol: 'Заменить материнскую плату.', need: 1, fee: [60, 120], work: 'Меняю материнскую плату…' }
     ];
     function rnd2(a, b) { return Math.floor(a + Math.random() * (b - a + 1)); }
+    var BAL = window.BAL || { fee: {}, repairChance: .4, partMarkupPct: 30, patienceSec: 240, nervousAfterSec: 120, onlineEvery: [100, 160], onlineMax: 3, onlineMarginPct: 8, lounge: false };
+    FAULTS.forEach(function (f) { var v = BAL.fee && BAL.fee[f.k]; if (v != null) f.fee = Array.isArray(v) ? v : [v, v]; });
+    function pickOf(a) { return a[Math.floor(Math.random() * a.length)]; }
     function money(n) { try { return M(n); } catch (e) { return '$' + Math.round(n); } }
     var JOB = null;                                   // текущий ремонт: {c, f, g, fee, conn, on, fixed, mon, scr, ...}
 
@@ -50,7 +53,7 @@
         if (CU.length > n0) {
           var c = CU[CU.length - 1], first = G.sold == 0;
           c.kind = 'buy';
-          if (!first && !JOB && G.sold >= 1 && !CU.some(function (x) { return x.kind == 'repair'; }) && Math.random() < .4) {
+          if (!first && !JOB && G.sold >= 1 && !CU.some(function (x) { return x.kind == 'repair'; }) && Math.random() < BAL.repairChance) {
             c.kind = 'repair'; c.fault = FAULTS[rnd2(0, FAULTS.length - 1)]; c.fee = rnd2(c.fault.fee[0], c.fault.fee[1]);
           }
           c.first = first;
@@ -60,18 +63,29 @@
 
     function leaveC(c) { c.s = 'out'; try { c.mk.visible = false; } catch (e) { } }
 
+    /* фразы при принятии и отказе заказа */
+    var PH_OK = ['Хорошо, подожду здесь.', 'Договорились, я буду рядом.', 'Отлично, спасибо! Не торопитесь.', 'Ладно, постою, подожду.'];
+    var PH_OK_L = ['Хорошо, я подожду в зоне отдыха.', 'Отлично, посижу пока на диване.', 'Договорились, буду вон там, позовёте.', 'Спасибо! Пока выпью воды и подожду.'];
+    var PH_NO_ME = ['Извините, в данный момент не смогу вам помочь.', 'Простите, сейчас очень много работы. Загляните позже.', 'К сожалению, такие заказы сегодня не берём.'];
+    var PH_NO_CL = ['Жаль, ну ладно.', 'Понятно, зайду в другой раз.', 'Эх, ладно. Всего доброго.'];
+    function accepted(c, longer) {
+      c.t = c.t0 = BAL.patienceSec + (longer ? 60 : 0);
+      toast(c.name + ': «' + pickOf(BAL.lounge ? PH_OK_L : PH_OK) + '»');
+    }
+    function declined(c) { say(pickOf(PH_NO_ME)); toast(c.name + ': «' + pickOf(PH_NO_CL) + '»'); leaveC(c); }
+
     function ask(c) {
       c.asked = 1;
       if (c.kind == 'repair') {
         var f = c.fault;
         talk([[c.name, 'Здравствуйте! У меня проблема с ПК: ' + f.t.toLowerCase() + '.'], [c.name, 'Починишь? Заплачу за работу и за деталь, если потребуется.']], null, [
-          ['Беру в ремонт', function () { acceptRepair(c); }],
-          ['Отказать', function () { toast(c.name + ' ушёл ни с чем.'); say('Извините, сейчас не могу.'); leaveC(c); }]
+          ['Беру в ремонт', function () { if (JOB) { acceptRepair(c); return; } acceptRepair(c); accepted(c, f.need >= 0); }],
+          ['Отказать', function () { declined(c); }]
         ]);
       } else {
         var need = 'ПК от ' + money(c.min) + (c.br ? ', видеокарта ' + c.br : '');
-        var o = [['Подберу', function () { c.acc = 1; toast('Когда ПК будет готов — подойди к клиенту и нажми [E].'); }]];
-        if (!c.first) o.push(['Отказать', function () { toast('Вы отказали клиенту ' + c.name + '.'); say('Извините, сейчас нет.'); leaveC(c); }]);
+        var o = [['Подберу', function () { c.acc = 1; accepted(c, false); toast('Когда ПК будет готов — подойди к клиенту и нажми [E].'); }]];
+        if (!c.first) o.push(['Отказать', function () { declined(c); }]);
         talk([[c.name, 'Здравствуйте! Мне нужен ' + need + '.'], [c.name, c.first ? 'Первый свой компьютер хочу. Поможете?' : 'Найдётся что-нибудь подходящее?']], null, o);
       }
     }
@@ -101,6 +115,78 @@
         });
       });
     }, 400);
+
+    /* ---------- терпение клиента: полоска с таймером над головой; после половины времени он нервничает ---------- */
+    function barSprite() {
+      var cv = document.createElement('canvas'); cv.width = 192; cv.height = 56;
+      var sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: new THREE.CanvasTexture(cv), transparent: true, depthTest: false }));
+      sp.scale.set(1.5, .44, 1); sp.position.set(0, 4.5, 0); sp.renderOrder = 10; sp.userData.cv = cv; return sp;
+    }
+    function drawBar(c) {
+      var sp = c.__bar, cv = sp.userData.cv, x = cv.getContext('2d'), f = Math.max(0, Math.min(1, c.t / c.t0)), s = Math.max(0, Math.ceil(c.t));
+      x.clearRect(0, 0, 192, 56); x.fillStyle = 'rgba(10,14,26,.86)'; x.fillRect(2, 2, 188, 52);
+      x.fillStyle = '#1e293b'; x.fillRect(12, 36, 168, 10); x.fillStyle = f > .5 ? '#22c55e' : f > .2 ? '#f59e0b' : '#ef4444'; x.fillRect(12, 36, 168 * f, 10);
+      x.font = 'bold 22px sans-serif'; x.fillStyle = '#fff'; x.textAlign = 'left'; x.textBaseline = 'alphabetic';
+      x.fillText((f > .5 ? '🙂' : f > .2 ? '😐' : '😠') + ' ' + Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'), 12, 28);
+      sp.material.map.needsUpdate = true;
+    }
+    var _tickCU = tickCU;
+    tickCU = function (dt) {
+      _tickCU.apply(this, arguments);
+      safe(function () {
+        var tt = clock.elapsedTime, now = performance.now();
+        CU.forEach(function (c) {
+          var on = c.s == 'wait' && c.asked && c.t0;
+          if (on && !c.__bar && c.g) { c.__bar = barSprite(); c.g.add(c.__bar); c.__bt = 0; }
+          if (!on) { if (c.__bar) { c.g.remove(c.__bar); c.__bar = null; } return; }
+          if (now - c.__bt > 500) { c.__bt = now; drawBar(c); }
+          if (c.t0 - c.t > BAL.nervousAfterSec) {            // нервничает: переминается, поглядывает на часы
+            var a = c.g.userData, ph = (tt + c.sl * 2) % 6;
+            c.g.rotation.z = Math.sin(tt * 3.1 + c.sl) * .035;
+            if (a && a.ar && a.ar[0]) a.ar[0].rotation.x = ph < 2.2 ? -1.3 : 0;
+          }
+        });
+      });
+    };
+
+    /* ---------- онлайн-заказы: появляются в паузах (пока нет живого клиента); [O] — список; срок до конца дня ---------- */
+    var ONL = [], onT = rnd2(BAL.onlineEvery[0], BAL.onlineEvery[1]), onN = 0, ONC = [250, 450, 700, 1100, 1800];
+    var badge = document.createElement('div');
+    badge.style.cssText = 'position:fixed;right:18px;top:64px;z-index:8000;display:none;padding:7px 12px;border-radius:10px;background:rgba(10,14,26,.88);color:#a5f3fc;font:600 13px system-ui,sans-serif;border:1px solid rgba(34,211,238,.5);cursor:pointer';
+    document.body.appendChild(badge);
+    function onUpd() { badge.style.display = ONL.length && mode == 'play' ? 'block' : 'none'; badge.textContent = '🛒 Онлайн-заказов: ' + ONL.length + ' · [O]'; }
+    function shipOnline(o) {
+      var pool = carry ? [carry] : G.pcs;
+      var ok = pool.map(function (p, i) { return { p: p, i: i }; }).filter(function (a) { return a.p.v >= o.min && (!o.br || a.p.gb == o.br); }).sort(function (a, b) { return a.p.v - b.p.v; })[0];
+      if (!ok) { toast('Подходящего ПК нет: нужен ПК от ' + money(o.min) + (o.br ? ', видеокарта ' + o.br : '') + '. Собери и возьми в руки.'); try { sfx('error'); } catch (e) { } return; }
+      var mgn = ok.p.v / 100 * BAL.onlineMarginPct, pay = ok.p.v + mgn;
+      G.m += pay; if (carry) dropCarry(); else G.pcs.splice(ok.i, 1);
+      ONL.splice(ONL.indexOf(o), 1);
+      toast('Онлайн-заказ отправлен курьером: +' + money(pay) + ' (прибыль +' + money(mgn) + ')');
+      try { sfx('sell'); hud(); save(); } catch (e) { } onUpd();
+    }
+    function openOnline() {
+      if (mode != 'play') return;
+      if (!ONL.length) { toast('Онлайн-заказов пока нет — они появляются, когда нет живых клиентов.'); return; }
+      var opts = ONL.map(function (o) { return ['ПК от ' + money(o.min) + (o.br ? ', ' + o.br : '') + ' — прибыль +' + BAL.onlineMarginPct + '%', function () { shipOnline(o); }]; });
+      opts.push(['Закрыть', function () { }]);
+      talk([['🛒 Онлайн-заказы', 'Отправь готовый ПК курьером. Срок — до конца дня. Живой клиент важнее.']], null, opts);
+    }
+    badge.onclick = openOnline;
+    addEventListener('keydown', function (e) { if (!e.repeat && e.code == 'KeyO' && mode == 'play') openOnline(); });
+    setInterval(function () {
+      safe(function () {
+        if (!G || mode != 'play' || !G.tid) { onUpd(); return; }
+        var live = CU.some(function (c) { return c.s == 'in' || c.s == 'wait'; });
+        if (!live && ONL.length < BAL.onlineMax && --onT <= 0) {
+          onT = rnd2(BAL.onlineEvery[0], BAL.onlineEvery[1]);
+          ONL.push({ id: ++onN, min: pickOf(ONC), br: Math.random() < .4 ? pickOf(['Nvira', 'Radion']) : null });
+          toast('🛒 Новый онлайн-заказ! Нажми [O], чтобы открыть список.');
+        }
+        onUpd();
+      });
+    }, 1000);
+    var _next = next; next = function () { ONL.length = 0; try { onUpd(); } catch (e) { } return _next.apply(this, arguments); };
 
     /* ---------- РЕМОНТ ---------- */
     var SPOT = { x: -1.5, y: 2.16, z: -5.6 }, MON = { x: -2.55, z: -5.6 };
@@ -212,8 +298,9 @@
       try { if (c.fault && c.fault.k == 'dust') addDust(g); } catch (e) { console.error(e); }
       JOB = { c: c, f: c.fault, g: g, fee: c.fee, conn: 0, on: 0, fixed: 0, mk: mk, busy: 0 };
       buildMonitor(JOB);
+      try { mkPanel(JOB); } catch (e) { console.error(e); }
       g.userData.act = function () { repairAct(); };
-      c.t = Math.max(c.t, 300); c.rep = 1;
+      c.rep = 1;
       try { sfx('put'); } catch (e) { }
       toast('ПК клиента — на верстаке слева, рядом монитор. Подключи ПК к монитору — нажми [E] на ПК.');
       say('Хорошо, посмотрим.');
@@ -272,31 +359,134 @@
       var ks = [6, 4, 5, 3, 2, 1];
       talk([['Верстак', 'Какую деталь заменить?']], null, ks.map(function (k) { return [PARTN[k], function () { attempt(j, 'part', k); }]; }).concat([['Назад', function () { menuAction(j); }]]));
     }
+    /* =====================================================================
+       ФИЗИЧЕСКИЙ РЕМОНТ: ПК приходит с закрытой боковой крышкой. Чтобы заменить деталь, нужно по шагам:
+       отвернуть винты → снять крышку → отключить/открутить → достать старую деталь → вставить новую → закрутить → поставить крышку.
+       Каждый шаг — нажатие [E] на ПК. Старая и новая детали видны в руках мастера (настоящие 3D-модели деталей).
+       ===================================================================== */
+    var RH = null;
+    function repHud(t) {
+      if (!RH) { RH = document.createElement('div'); RH.style.cssText = 'position:fixed;left:50%;bottom:96px;transform:translateX(-50%);z-index:9000;padding:10px 18px;border-radius:12px;background:rgba(10,14,26,.9);color:#e8ecf5;font:600 15px system-ui,sans-serif;border:1px solid rgba(120,160,255,.45);pointer-events:none;display:none;text-align:center;max-width:80vw'; document.body.appendChild(RH); }
+      if (!t) { RH.style.display = 'none'; return; } RH.style.display = 'block'; RH.innerHTML = t;
+    }
+    var SILV = new THREE.MeshStandardMaterial({ color: 0xcfd6e2, metalness: .8, roughness: .3 });
+    function mkPanel(j) {
+      var g = j.g; g.updateMatrixWorld(true);
+      var b = new THREE.Box3().setFromObject(g), sz = b.getSize(new THREE.Vector3()), c = b.getCenter(new THREE.Vector3());
+      var w = sz.x * .98, h = sz.y * .96, P = new THREE.Group();
+      var plate = new THREE.Mesh(new THREE.BoxGeometry(w, h, .03), new THREE.MeshStandardMaterial({ color: 0x2b3345, metalness: .6, roughness: .45 })); plate.castShadow = true; P.add(plate);
+      P.screws = [];
+      [[-1, 1], [1, 1], [-1, -1], [1, -1]].forEach(function (q) {
+        var sc = new THREE.Mesh(new THREE.CylinderGeometry(.028, .028, .035, 10), SILV); sc.rotation.x = Math.PI / 2; sc.position.set(q[0] * (w / 2 - .07), q[1] * (h / 2 - .07), .03); sc.userData.on = 1; P.add(sc); P.screws.push(sc);
+      });
+      P.position.set(c.x, c.y, b.max.z + .02); P.rotation.y = g.rotation.y; P.userData.home = P.position.clone(); P.userData.w = w; P.userData.h = h;
+      scene.add(P); j.panel = P; j.open = 0; return P;
+    }
+    function wob(j, d) { var g = j.g, y0 = g.position.y; tw(d || .4, function (u) { g.position.y = y0 + Math.sin(u * 20) * .004; g.rotation.z = Math.sin(u * 14) * .008; }, function () { g.position.y = y0; g.rotation.z = 0; }); }
+    function partVis(cl, item, dark) {
+      var m = null; try { m = PB[cl](item); } catch (e) { m = null; }
+      if (!m) { m = new THREE.Mesh(new THREE.BoxGeometry(1, .5, 1), new THREE.MeshStandardMaterial({ color: 0x556070 })); }
+      var b = new THREE.Box3().setFromObject(m), sz = b.getSize(new THREE.Vector3()), mx = Math.max(sz.x, sz.y, sz.z) || 1, k = .55 / mx;
+      var G2 = new THREE.Group(); m.scale.multiplyScalar(k); m.updateMatrixWorld(true); var b2 = new THREE.Box3().setFromObject(m), c2 = b2.getCenter(new THREE.Vector3());
+      m.position.sub(c2); G2.add(m);
+      if (dark) G2.traverse(function (o) { if (o.isMesh && o.material) { o.material = o.material.clone(); if (o.material.color) o.material.color.multiplyScalar(.45); } });
+      return G2;
+    }
+    function pcC(j) { var b = new THREE.Box3().setFromObject(j.g); return { c: b.getCenter(new THREE.Vector3()), b: b }; }
+    function dropVis(j, key) { var v = j[key]; if (v) { scene.remove(v); j[key] = null; } }
+    function doStep(j, s, k, cb) {
+      var kind = s[2], P = j.panel, info = pcC(j), c = info.c;
+      if (kind == 'sOut') {
+        var sc = P && P.screws.filter(function (x) { return x.userData.on; })[0];
+        try { sfx('screw'); } catch (e) { }
+        if (!sc) { cb(); return; } wob(j, .35);
+        var y0 = sc.position.z; tw(.5, function (u) { sc.position.z = y0 + .18 * u; sc.rotation.y = u * 18; sc.scale.setScalar(1 - Math.max(0, u - .6) * 2.5); }, function () { sc.visible = false; sc.userData.on = 0; sc.scale.setScalar(1); sc.rotation.y = 0; sc.position.z = .03; cb(); });
+      } else if (kind == 'sIn') {
+        var sc2 = P && P.screws.filter(function (x) { return !x.userData.on; })[0];
+        try { sfx('screw'); } catch (e) { }
+        if (!sc2) { cb(); return; } sc2.visible = true; wob(j, .35);
+        tw(.45, function (u) { sc2.position.z = .03 + .18 * (1 - u); sc2.rotation.y = u * 18; }, function () { sc2.position.z = .03; sc2.userData.on = 1; cb(); });
+      } else if (kind == 'panelOff') {
+        try { sfx('put'); } catch (e) { }
+        var h0 = P.userData.home; tw(.9, function (u) { P.position.set(h0.x - 1.1 * u, h0.y - .15 * Math.sin(u * 3.1), h0.z + .35 * u); P.rotation.z = -.35 * u; }, function () { P.visible = false; cb(); });
+      } else if (kind == 'panelOn') {
+        try { sfx('put'); } catch (e) { }
+        var h1 = P.userData.home; P.visible = true; tw(.8, function (u) { var v = 1 - u; P.position.set(h1.x - 1.1 * v, h1.y, h1.z + .35 * v); P.rotation.z = -.35 * v; }, function () { P.position.copy(h1); P.rotation.z = 0; cb(); });
+      } else if (kind == 'screw') {
+        try { sfx('screw'); } catch (e) { }
+        wob(j, .5); var m = new THREE.Mesh(new THREE.CylinderGeometry(.022, .022, .04, 8), SILV), bb = info.b;
+        m.position.set(bb.min.x + Math.random() * (bb.max.x - bb.min.x), bb.min.y + (bb.max.y - bb.min.y) * (.3 + Math.random() * .5), bb.max.z + .03); m.rotation.x = Math.PI / 2; scene.add(m);
+        var yy = m.position.y, zz = m.position.z; tw(.6, function (u) { m.position.z = zz + .2 * u; m.position.y = yy - .5 * u * u; m.rotation.y = u * 14; }, function () { scene.remove(m); cb(); });
+      } else if (kind == 'act') {
+        try { sfx(/кабел|вентилятор/i.test(s[0]) ? 'cable' : 'put'); } catch (e) { } wob(j, .5); setTimeout(cb, 500);
+      } else if (kind == 'blow') {
+        try { sfx('screw'); } catch (e) { }
+        j.blowN = (j.blowN || 0) + 1; var u0 = (j.blowN - 1) / 5, u1 = Math.min(1, j.blowN / 5);
+        tw(.9, function (u) { try { blowDust(j.g, u0 + (u1 - u0) * u); } catch (e) { } }, function () { cb(); });
+      } else if (kind == 'pull') {
+        try { sfx('put'); } catch (e) { }
+        dropVis(j, 'oldVis'); var v = partVis(j.cl, CAT[j.cl][0], true); v.position.copy(c); scene.add(v); j.oldVis = v;
+        var tx = c.x + .55, ty = info.b.max.y + .35, tz = info.b.max.z + .35; tw(.9, function (u) { v.position.set(c.x + (tx - c.x) * u, c.y + (ty - c.y) * u, c.z + (tz - c.z) * u); v.rotation.y = u * 3; }, function () { cb(); });
+      } else if (kind == 'push') {
+        try { sfx('put'); } catch (e) { }
+        dropVis(j, 'oldVis'); var nv = partVis(j.cl, CAT[j.cl][j.newI != null ? j.newI : 0], false); var sx = c.x + .55, sy = info.b.max.y + .35, sz = info.b.max.z + .35;
+        nv.position.set(sx, sy, sz); scene.add(nv); tw(.9, function (u) { nv.position.set(sx + (c.x - sx) * u, sy + (c.y - sy) * u, sz + (c.z - sz) * u); nv.scale.setScalar(1 - u * .6); }, function () { scene.remove(nv); cb(); });
+      } else { cb(); }
+    }
+    function runSteps(j, steps, done) {
+      var si = 0, k = 0, prev = j.g.userData.act;
+      function render() {
+        var s = steps[si];
+        repHud('Шаг ' + (si + 1) + '/' + steps.length + ': ' + s[0] + (s[1] > 1 ? ' (' + (k + 1) + '/' + s[1] + ')' : '') + '<div style="opacity:.7;font-weight:400;font-size:13px;margin-top:2px">наведи на ПК и нажми [E]</div>');
+      }
+      function finish() { j.g.userData.act = prev; repHud(null); done && done(); }
+      j.g.userData.act = function () {
+        if (j.busy || A.lock) return; var s = steps[si]; j.busy = 1;
+        doStep(j, s, k, function () { j.busy = 0; k++; if (k >= s[1]) { si++; k = 0; } if (si >= steps.length) { finish(); return; } render(); });
+      };
+      render();
+    }
+    var OPEN = [['Отверни винты боковой крышки', 4, 'sOut'], ['Сними боковую крышку', 1, 'panelOff']];
+    var CLOSE = [['Поставь боковую крышку на место', 1, 'panelOn'], ['Закрути винты крышки', 4, 'sIn']];
+    var PS = {
+      6: [['Отключи кабели питания от платы', 1, 'act'], ['Отверни винты блока питания', 4, 'screw'], ['Вытащи старый блок питания', 1, 'pull'], ['Вставь новый блок питания', 1, 'push'], ['Закрути винты блока питания', 4, 'screw'], ['Подключи кабели питания', 1, 'act']],
+      4: [['Отогни фиксаторы слота памяти', 1, 'act'], ['Вытащи старый модуль памяти', 1, 'pull'], ['Вставь новый модуль до щелчка', 1, 'push'], ['Защёлкни фиксаторы', 1, 'act']],
+      5: [['Отверни винт крепления видеокарты', 1, 'screw'], ['Отогни защёлку PCIe-слота', 1, 'act'], ['Вытащи старую видеокарту', 1, 'pull'], ['Вставь новую видеокарту', 1, 'push'], ['Закрути винт крепления', 1, 'screw']],
+      3: [['Отключи вентилятор кулера', 1, 'act'], ['Отпусти крепление кулера', 2, 'screw'], ['Сними старый кулер', 1, 'pull'], ['Нанеси термопасту', 1, 'act'], ['Установи новый кулер', 1, 'push'], ['Закрепи кулер', 2, 'screw'], ['Подключи вентилятор', 1, 'act']],
+      2: [['Сними кулер процессора', 2, 'screw'], ['Открой рычаг сокета', 1, 'act'], ['Достань старый процессор', 1, 'pull'], ['Вставь новый процессор по метке-треугольнику', 1, 'push'], ['Закрой рычаг сокета', 1, 'act'], ['Нанеси термопасту', 1, 'act'], ['Поставь кулер на место', 2, 'screw']],
+      1: [['Отключи все кабели от платы', 1, 'act'], ['Отверни винты материнской платы', 6, 'screw'], ['Достань старую плату', 1, 'pull'], ['Установи новую плату', 1, 'push'], ['Закрути винты платы', 6, 'screw'], ['Подключи все кабели', 1, 'act']]
+    };
+    var PASTE = [['Сними кулер процессора', 2, 'screw'], ['Сотри старую термопасту', 1, 'act'], ['Нанеси новую термопасту', 1, 'act'], ['Установи кулер на место', 2, 'screw']];
+    var DUST = [['Продуй вентиляторы и радиаторы', 3, 'blow'], ['Продуй платы и дно корпуса', 2, 'blow']];
+
     function attempt(j, kind, cl) {
+      if (j.busy) return;
+      if (j.panel && !j.open) { runSteps(j, OPEN, function () { j.open = 1; attempt(j, kind, cl); }); return; }
       var f = j.f, right = kind == 'part' ? (f.need == cl) : (f.k == kind);
-      if (!right) {
-        toast('Не помогло — ПК пищит так же. Сверься со справочником.'); try { sfx('error'); } catch (e) { }
+      if (kind == 'part' && !right) {
+        toast('Достал деталь, проверил — она исправна. Поставил обратно. ПК пищит так же. Сверься со справочником.'); try { sfx('error'); } catch (e) { }
         j.c.t = Math.max(1, j.c.t - 20); return;
       }
       var part = null;
-      if (f.need >= 0) {
-        part = findPart(f.need);
-        if (!part) { toast('Нет детали: ' + CN[f.need].toLowerCase() + '. Купи в маркете (терминал справа), возьми с полки в руки и нажми [E] на ПК.'); try { sfx('error'); } catch (e) { } return; }
+      if (kind == 'part') {
+        part = findPart(cl);
+        if (!part) { toast('Нет запасной детали: ' + CN[cl].toLowerCase() + '. Купи в маркете (терминал справа) и возьми с полки.'); try { sfx('error'); } catch (e) { } return; }
       }
-      j.busy = 1; A.lock = 1;
+      j.cl = kind == 'part' ? cl : 3; j.newI = part ? part.i : 0;
+      var steps = kind == 'part' ? PS[cl] : kind == 'dust' ? DUST : PASTE;
       var d0 = part ? D(part) : null;
-      try { sfx('screw'); } catch (e) { }
-      toast(f.work);
-      var g = j.g, y0 = g.position.y;
-      tw(f.need >= 0 ? 4 : 5, function (u) { g.position.y = y0 + Math.sin(u * 40) * .006; g.rotation.z = Math.sin(u * 25) * .01; if (kind == 'dust') blowDust(g, u); }, function () {
-        g.position.y = y0; g.rotation.z = 0; A.lock = 0; j.busy = 0; if (g.userData.dust) blowDust(g, 1);
-        if (part) { j.part = d0; consume(part); }
-        j.fixed = 1; j.pay = Math.round(j.fee + (d0 ? d0.p * 1.3 : 0));
-        g.traverse(function (o) { if (o.userData && o.userData.fan) o.userData.on = 1; });
-        j.mk.material.color.setHex(0x22c55e);
-        paintScreen(j, 'ok'); try { sfx('power'); } catch (e) { } beepAt(0, .15);
-        toast('Готово! ПК загрузился с одним коротким сигналом. Подойди к клиенту [E] — он заплатит ' + money(j.pay) + '.');
-        say('Работает!'); try { save(); } catch (e) { }
+      runSteps(j, steps, function () {
+        if (!right) { toast('Не помогло — ПК пищит так же. Сверься со справочником.'); try { sfx('error'); } catch (e) { } j.c.t = Math.max(1, j.c.t - 20); return; }
+        var fin = function () {
+          if (part) { j.part = d0; consume(part); }
+          j.fixed = 1; j.pay = Math.round(j.fee + (d0 ? d0.p * (1 + BAL.partMarkupPct / 100) : 0));
+          j.g.traverse(function (o) { if (o.userData && o.userData.fan) o.userData.on = 1; });
+          j.mk.material.color.setHex(0x22c55e);
+          paintScreen(j, 'ok'); try { sfx('power'); } catch (e) { } beepAt(0, .15);
+          toast('Готово! ПК загрузился с одним коротким сигналом. Подойди к клиенту [E] — он заплатит ' + money(j.pay) + '.');
+          say('Работает!'); try { save(); } catch (e) { }
+        };
+        if (j.panel) { toast('Деталь заменена. Закрой корпус.'); runSteps(j, CLOSE, function () { j.open = 0; fin(); }); } else fin();
       });
     }
 
@@ -353,7 +543,7 @@
         }
       });
     }, 700);
-    function clear() { if (JOB) { try { LEDT.forEach(clearTimeout); if (JOB.mon) scene.remove(JOB.mon); if (JOB.cable) scene.remove(JOB.cable); } catch (e) { } try { JOB.g.traverse(function (o) { var i = FN.indexOf(o); if (i >= 0) FN.splice(i, 1); }); scene.remove(JOB.g); } catch (e) { } JOB = null; } }
+    function clear() { if (JOB) { try { LEDT.forEach(clearTimeout); if (JOB.mon) scene.remove(JOB.mon); if (JOB.cable) scene.remove(JOB.cable); } catch (e) { } try { JOB.g.traverse(function (o) { var i = FN.indexOf(o); if (i >= 0) FN.splice(i, 1); }); scene.remove(JOB.g); } catch (e) { } try { if (JOB.panel) scene.remove(JOB.panel); dropVis(JOB, 'oldVis'); repHud(null); } catch (e) { } JOB = null; } }
     var _sp = startPlay; startPlay = function () { clear(); return _sp.apply(this, arguments); };
     var _nx = next; next = function () { clear(); return _nx.apply(this, arguments); };
     var _tm = toMenu; toMenu = function () { clear(); return _tm.apply(this, arguments); };
