@@ -9,9 +9,11 @@
   try { var sv = localStorage.getItem('pcbatch'); if (sv === '1') ON = true; else if (sv === '0') ON = false; } catch (e) { }
   var CELL = 10, MAXV = 60000, done = false, chunks = [], stat = { src: 0, out: 0 };
   function ok() { try { return typeof THREE !== 'undefined' && !!scene; } catch (e) { return false; } }
-  function chainVisible(o) { for (; o; o = o.parent) if (o.visible === false) return false; return true; }
+  function stG() { return window.__W && window.__W.ST; }
+  function inST(o) { var t = stG(); for (; o; o = o.parent) if (o === t) return true; return false; }
+  function chainVisible(o) { var t = stG(); for (; o; o = o.parent) if (o.visible === false && o !== t) return false; return true; }
   function chainClean(o) {
-    for (var p = o.parent; p; p = p.parent) { if (p.isScene) break; if (window.__W && p === window.__W.ST) return false; if (p.userData && (p.userData.act || p.userData.sec || p.userData.dyn || p.userData.keep)) return false; if (p.isCamera || p.isLight) return false; }
+    for (var p = o.parent; p; p = p.parent) { if (p.isScene) break;  if (p.userData && (p.userData.act || p.userData.sec || p.userData.dyn || p.userData.keep)) return false; if (p.isCamera || p.isLight) return false; }
     return true;
   }
   function why(o) {
@@ -112,11 +114,12 @@
     map.forEach(function (info, o) {
       var p = new THREE.Vector3().setFromMatrixPosition(o.matrixWorld), cell = floor(p.x / CELL) + ',' + floor(p.z / CELL) + ',' + floor(p.y / 8);
       items(o).forEach(function (it) {
-        var key = msig(it.mat) + '|' + sig(o.geometry) + '|' + cell;
-        var gr = groups.get(key); if (!gr) { gr = { mat: it.mat, list: [] }; groups.set(key, gr); } gr.list.push(it);
+        var st = inST(o), key = msig(it.mat) + '|' + sig(o.geometry) + '|' + cell + (st ? '|S' : '');
+        var gr = groups.get(key); if (!gr) { gr = { mat: it.mat, list: [], st: st }; groups.set(key, gr); } gr.list.push(it);
       });
     });
     var root = new THREE.Group(); root.userData.batchRoot = 1; root.matrixAutoUpdate = false; scene.add(root);
+    var rootS = null; if (stG()) { rootS = new THREE.Group(); rootS.userData.batchRoot = 1; rootS.matrixAutoUpdate = false; stG().add(rootS); }   // склеенная улица лежит ВНУТРИ улицы: отсечение скрывает её вместе с ней
     var made = [];
     groups.forEach(function (gr) {
       if (gr.list.length < 3) return;
@@ -125,7 +128,7 @@
       parts.push(part);
       parts.forEach(function (l) {
         if (l.length < 3) return;
-        var mesh = mergeGroup(l, gr.mat.clone()); root.add(mesh);
+        var mesh = mergeGroup(l, gr.mat.clone()); (gr.st && rootS ? rootS : root).add(mesh);
         var c = { mesh: mesh, recs: [], dead: false }; stat.out++; made.push({ c: c, l: l });
       });
     });
@@ -145,7 +148,7 @@
         if (!r) {
           r = { o: o, want: true, mat: o.material, ms: osig(o), mw: map.get(o).m, chunks: [], dead: false, anc: [] };
           (function (rr) { Object.defineProperty(o, 'visible', { configurable: true, get: function () { return rr.dead ? rr.want : false; }, set: function (v) { rr.want = v; if (!rr.dead) unbatch(rr.chunks[0]); } }); })(r);
-          for (var p = o.parent; p && !p.isScene; p = p.parent) r.anc.push({ p: p, v: p.visible });
+          for (var p = o.parent; p && !p.isScene; p = p.parent) if (p !== stG()) r.anc.push({ p: p, v: p.visible });
           recs.set(o, r); stat.src++;
         }
         if (r.chunks.indexOf(m.c) < 0) r.chunks.push(m.c);
