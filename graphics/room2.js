@@ -151,16 +151,27 @@
     setInterval(function () { try { ce.material.color.copy(cm.material.color); } catch (e) { } }, 1000);
     return true;
   }
+  var why = '';
   function init() {
-    if (typeof scene === 'undefined' || !scene || typeof P === 'undefined' || !P || typeof cam === 'undefined' || !cam || typeof THREE === 'undefined') return false;
-    grp.scale.y = 1.12; grp.position.y = -.473 * 1.12; /* пол новой комнаты на уровне старого (y=0), иначе старая мебель и модели утопают в полу */ scene.add(grp); window.__room2 = grp;
-    if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
-    relocate(); moveLoose(); installShelf();
-    var k = 0, t = setInterval(function () { hideOld(); moveLoose(); if (++k > 12) clearInterval(t); }, 1500);
-    var ct0 = 0, ci = setInterval(function () { if (ceilSync() || ++ct0 > 60) clearInterval(ci); }, 700);
-    P.x = 0; P.z = 4; try { yaw = Math.PI; } catch (e) { }
+    try {
+      if (typeof scene === 'undefined' || !scene) { why = 'нет scene'; return false; }
+      if (typeof P === 'undefined' || !P) { why = 'нет P'; return false; }
+      if (typeof cam === 'undefined' || !cam) { why = 'нет cam'; return false; }
+      if (typeof THREE === 'undefined') { why = 'нет THREE'; return false; }
+      grp.scale.y = 1.12; grp.position.y = -.473 * 1.12; /* пол новой комнаты на уровне старого (y=0), иначе старая мебель и модели утопают в полу */ scene.add(grp); window.__room2 = grp;
+      if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
+    } catch (e) { why = String(e && e.message || e); console.error('[room2] init', e); return false; }
+    var errs = [];
+    [function () { relocate(); }, function () { moveLoose(); }, function () { installShelf(); }].forEach(function (f) { try { f(); } catch (e) { errs.push(String(e && e.message || e)); console.error('[room2]', e); } });
+    var k = 0, t = setInterval(function () { try { hideOld(); moveLoose(); } catch (e) { } if (++k > 12) clearInterval(t); }, 1500);
+    var ct0 = 0, ci = setInterval(function () { try { if (ceilSync() || ++ct0 > 60) clearInterval(ci); } catch (e) { clearInterval(ci); } }, 700);
+    try { P.x = 0; P.z = 4; yaw = Math.PI; } catch (e) { }
     window.__room2goto = function (x, z) { P.x = x; P.z = z; };
+    setTimeout(function () { try { toast(errs.length ? 'Новая планировка включена, но с ошибкой: ' + errs[0] : 'Новая планировка включена (F8 — вернуть старую).'); } catch (e) { } }, 2500);
     return true;
   }
-  var tries = 0, iv = setInterval(function () { if (init() || ++tries > 200) clearInterval(iv); }, 500);
+  var tries = 0, iv = setInterval(function () {
+    if (init()) { clearInterval(iv); return; }
+    if (++tries > 120) { clearInterval(iv); try { toast('Новая планировка НЕ запустилась: ' + why); } catch (e) { } console.error('[room2] не запустилась:', why); }
+  }, 500);
 })();
