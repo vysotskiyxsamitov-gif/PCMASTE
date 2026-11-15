@@ -2,6 +2,9 @@
 (function () {
   var ON = true; try { ON = localStorage.getItem('pcroom2') !== '0'; } catch (e) { }
   addEventListener('keydown', function (e) { if (e.code === 'F8') { try { localStorage.setItem('pcroom2', ON ? '0' : '1'); } catch (x) { } location.reload(); } });
+  var EMPTY = true; try { EMPTY = localStorage.getItem('pcr2empty') !== '0'; } catch (e) { }
+  window.__r2empty = EMPTY;
+  addEventListener('keydown', function (e) { if (e.code === 'F9') { try { localStorage.setItem('pcr2empty', EMPTY ? '0' : '1'); } catch (x) { } location.reload(); } });
   if (!ON) return;
   var B = [["Cube",-13.088,0,-32.908,13.101,.473,8.221],["Cube.001",-13.11,.473,-32.678,-12.85,6.497,7.989],["Cube.002",13.074,.473,-32.332,13.335,6.497,8.419],["Cube.003",-12.807,.473,-32.933,13.09,6.485,-32.117],["Cube.004",-7.77,-.19,7.708,-5.731,6.63,8.406],["Cube.005",-5.694,.317,7.733,13.232,2.119,8.339],["Cube.006",-13.198,5.007,7.796,-7.77,6.612,8.353],["Cube.007",-5.731,5.076,7.793,13.236,6.542,8.423],["Cube.008",.26,2.119,7.615,1.416,5.241,8.224],["Cube.009",7.603,2.119,7.746,8.833,5.084,8.451],["Cube.010",-12.817,.473,-10.744,8.159,6.203,-9.816],["Cube.011",-12.71,.473,-17.014,-9.36,6.029,-16.729],["Cube.012",-6.609,.473,-17.005,9.115,5.668,-16.62],["Cube.013",12.289,.473,-17.138,13.187,6.13,-16.518],["Cube.014",2.146,.473,-32.538,3.2,5.629,-16.833],["Cube.015",-14.284,5.81,-17.088,13.983,6.386,-16.581],["Cube.016",8.159,5.366,-10.717,13.386,6.195,-9.883]];
   function cv(w, h, f) { var c = document.createElement('canvas'); c.width = w; c.height = h; f(c.getContext('2d'), w, h); var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
@@ -59,7 +62,7 @@
 
   // ---- Склад: дополнительные стеллажи по классам деталей. Что не влезло на главный стеллаж, раскладывается сюда ----
   var RK = [];     // по классу c: {x0, z, y0:[...]}  стеллаж длиной 3.2 вдоль x, лицом к +z
-  var RACKPOS = { 0: [-10.8, -23.6], 1: [-7.2, -23.6], 2: [-3.6, -23.6], 3: [-10.8, -27.4], 4: [-7.2, -27.4], 5: [-3.6, -27.4], 6: [-3.6, -20.2] };
+  var RACKPOS = { 0: [-11.4, -23.6], 1: [-7.4, -23.6], 2: [-3.4, -23.6], 3: [-11.4, -27.4], 4: [-7.4, -27.4], 5: [-3.4, -27.4], 6: [-3.4, -20.2] };
   var ovG = null;
   function buildRacks() {
     if (ovG) return;
@@ -67,14 +70,14 @@
     var mP = new THREE.MeshLambertMaterial({ color: 0x4a5460 }), mB = new THREE.MeshLambertMaterial({ color: 0x8a8f96 }), mHit = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
     function box(w, h, d, m, x, y, z) { var o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); ovG.add(o); return o; }
     Object.keys(RACKPOS).forEach(function (k) {
-      var c = +k, x0 = RACKPOS[k][0], z = RACKPOS[k][1], L = 3.2, D = 1.0;
-      [[x0, z - D / 2], [x0 + L, z - D / 2], [x0, z + D / 2], [x0 + L, z + D / 2]].forEach(function (p) { box(.1, 4.2, .1, mP, p[0], 2.1, p[1]); });
-      box(L, .1, .06, mP, x0 + L / 2, 4.1, z + D / 2); box(L, 3.9, .04, mP, x0 + L / 2, 2.1, z - D / 2);
-      [.3, 1.5, 2.7].forEach(function (y) { box(L, .08, D, mB, x0 + L / 2, y, z); });
-      try { lp(ovG, SECN[c], 2.9, .32, x0 + L / 2, 4.35, z + D / 2 + .02, '#fff', CCOL[c], 0); } catch (e) { }
-      var h = box(L, 3.9, D + .2, mHit, x0 + L / 2, 2.1, z); h.userData.act = function () { putSec(c); }; h.userData.sec = 1;
+      var c = +k, x0 = RACKPOS[k][0], z = RACKPOS[k][1], L = 3.6, D = 1.0;
+      [[x0, z - D / 2], [x0 + L, z - D / 2], [x0, z + D / 2], [x0 + L, z + D / 2]].forEach(function (p) { box(.1, 4.7, .1, mP, p[0], 2.35, p[1]); });
+      box(L, .1, .06, mP, x0 + L / 2, 4.6, z + D / 2); box(L, 4.4, .04, mP, x0 + L / 2, 2.35, z - D / 2);
+      [.3, 1.4, 2.5, 3.6].forEach(function (y) { box(L, .08, D, mB, x0 + L / 2, y, z); });
+      try { lp(ovG, SECN[c], 3.3, .34, x0 + L / 2, 4.85, z + D / 2 + .02, '#fff', CCOL[c], 0); } catch (e) { }
+      var h = box(L, 4.4, D + .2, mHit, x0 + L / 2, 2.35, z); h.userData.act = function () { putSec(c); }; h.userData.sec = 1;
       solid.push([x0 - .1, z - .65, x0 + L + .1, z + .65]);
-      RK[c] = { x0: x0, z: z, L: L, D: D, tiers: [.34, 1.54, 2.74] };
+      RK[c] = { x0: x0, z: z, L: L, D: D, tiers: [.34, 1.44, 2.54, 3.64] };
     });
     // мои «декоративные» блоки на складе были лишними — теперь тут настоящие стеллажи
   }
@@ -88,10 +91,9 @@
       var k = cnt[x.c]++, bd = BOXD[x.c], w = bd[0], h = bd[1], dp = bd[2];
       var sA = [{ z0: -7.2, z1: -1.7 }, { z0: -1.5, z1: 3.4 }, { z0: -7.2, z1: -4.7 }, { z0: -4.5, z1: -.5 }, { z0: -.3, z1: 2.5 }, { z0: -7.2, z1: .2 }, { z0: 3.6, z1: 7.2 }][x.c];
       var per = Math.max(1, Math.floor((sA.z1 - sA.z0) / (w + .06))), stk = Math.max(1, Math.floor(.95 / (h + .03))), cap = per * stk;
-      if (k < cap) return;                                  // поместилось на главном стеллаже
       var r = RK[x.c]; if (!r) return;
-      var m = k - cap, perR = Math.max(1, Math.floor((r.L - .2) / (w + .06))), tcap = perR * stk, tier = Math.floor(m / tcap);
-      if (tier >= 3) return;
+      var m = k, perR = Math.max(1, Math.floor((r.L - .2) / (w + .06))), tcap = perR * stk, tier = Math.floor(m / tcap);
+      if (tier >= 4) return;
       var q = m % tcap, lv = Math.floor(q / perR), col = q % perR, hl = x.c == n;
       var side = new THREE.MeshStandardMaterial({ map: sideTex(x), roughness: .7, metalness: .05 });
       var front = new THREE.MeshStandardMaterial({ map: boxTex(x), roughness: .35, metalness: .15, emissive: hl ? 0x22d3ee : 0, emissiveIntensity: hl ? .35 : 0 });
@@ -104,10 +106,71 @@
   function installShelf() {
     try {
       buildRacks();
-      var _sh = shelf;
-      shelf = function () { _sh.apply(this, arguments); try { overflowItems(); } catch (e) { console.warn('[room2] overflow', e); } };
+      shelf = function () { try { overflowItems(); } catch (e) { console.warn('[room2] shelf', e); } };
       shelf();
     } catch (e) { console.warn('[room2] racks', e); }
+  }
+
+  // ================= ПОЛНАЯ ЧИСТКА СТАРОЙ КОМНАТЫ =================
+  var R2W = null;
+  function hasAct(o) { var f = false; o.traverse(function (c) { if (c.userData && typeof c.userData.act === 'function') f = true; }); return f; }
+  function keepIt(o) {
+    if (EMPTY) {
+      if (o.isLight || o === grp || o === R2W || (typeof cam !== 'undefined' && o === cam)) return true;
+      if (o.name && o.name.indexOf('R2') === 0) return true;
+      if (window.__W && o === window.__W.ST) return true;
+      try { if (o === bod || o === benchPC || o === benchT || o === tm || o === dispB) return true; } catch (e) { }
+      try { if (typeof THG !== 'undefined' && THG.indexOf(o) >= 0) return true; } catch (e) { }
+      return false;
+    }
+    if (o.isLight || o === grp || o === R2W || (typeof cam !== 'undefined' && o === cam)) return true;
+    if (o.name && o.name.indexOf('R2') === 0) return true;
+    if (window.__W && o === window.__W.ST) return true;
+    try { if (o === bod || o === flG || o === wrk || o === dbr || o === dec || o === benchPC || (A && A.cs === o) || o === benchT || o === tm || o === dispB) return true; } catch (e) { }
+    try { if (typeof THG !== 'undefined' && THG.indexOf(o) >= 0) return true; } catch (e) { }
+    if (o.userData && (o.userData.__keep || o.userData.pc)) return true;
+    return hasAct(o);
+  }
+  function purgeOld() {
+    var bb = new THREE.Box3(), sz = new THREE.Vector3(), n = 0;
+    scene.children.slice().forEach(function (o) {
+      try {
+        if (keepIt(o)) return;
+        bb.setFromObject(o); if (bb.isEmpty()) return;
+        if (EMPTY) { if (bb.min.z > 8.6) return; scene.remove(o); n++; return; }          // пустая комната: убираем всё, кроме света, камеры, улицы и невидимых зон
+        if (bb.max.x < -11.5 || bb.min.x > 14.5 || bb.max.z < -9.8 || bb.min.z > 9.6) return;       // вне старой комнаты (улица, новые комнаты)
+        bb.getSize(sz);
+        var big = Math.max(sz.x, sz.y, sz.z) >= .9;
+        if (o.isSprite || o.isPoints || big) { scene.remove(o); n++; }
+      } catch (e) { }
+    });
+    return n;
+  }
+  function buildWorld() {
+    if (R2W) return;
+    R2W = new THREE.Group(); R2W.name = 'R2WORLD'; scene.add(R2W);
+    var cache = {};
+    function M(c) { return cache[c] || (cache[c] = new THREE.MeshLambertMaterial({ color: c })); }
+    function box(w, h, d, c, x, y, z) { var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), M(c)); m.position.set(x, y, z); R2W.add(m); return m; }
+    // верстак мастерской (центр 8; -24) — точно под зону сборки и ремонта
+    var bx0 = 8, bz0 = -24;
+    box(6, .2, 2.6, 0xa07a4a, bx0, 1.52, bz0); box(6.1, .06, 2.7, 0x6b4a2b, bx0, 1.4, bz0);
+    [[-2.8, -1.1], [2.8, -1.1], [-2.8, 1.1], [2.8, 1.1]].forEach(function (p) { box(.2, 1.5, .2, 0x3a4250, bx0 + p[0], .75, bz0 + p[1]); });
+    box(5.6, .08, 2.2, 0x555b63, bx0, .5, bz0);
+    box(1.5, 1.0, 2.2, 0x4a5460, bx0 + 2.0, .95, bz0);
+    for (var d = 0; d < 3; d++) { box(1.4, .28, .04, 0x6c7684, bx0 + 2.0, .55 + d * .32, bz0 - 1.12); box(.5, .05, .06, 0xd9d9d9, bx0 + 2.0, .62 + d * .32, bz0 - 1.16); }
+    box(3.6, .03, 1.4, 0x2f7a3a, bx0 - .6, 1.64, bz0 + .1);                       // антистатический коврик
+    box(.5, .5, .5, 0x3a3f47, bx0 - 2.5, 1.9, bz0 + .5);                           // тиски
+    box(.1, 1.5, .1, 0x888888, bx0 - 2.6, 2.3, bz0 - .8); box(1.0, .1, .1, 0x888888, bx0 - 2.1, 3.0, bz0 - .8); box(.6, .15, .5, 0xfff2c0, bx0 - 1.7, 2.95, bz0 - .8); // лампа
+    // киоск «МАРКЕТ» (терминал заказа деталей) — рядом с хитбоксом
+    var kt = (function () { var c = document.createElement('canvas'); c.width = 320; c.height = 200; var x = c.getContext('2d'); var g = x.createLinearGradient(0, 0, 320, 200); g.addColorStop(0, '#0b2a5a'); g.addColorStop(1, '#3b0f6a'); x.fillStyle = g; x.fillRect(0, 0, 320, 200); x.fillStyle = '#fff'; x.textAlign = 'center'; x.font = 'bold 54px sans-serif'; x.fillText('МАРКЕТ', 160, 100); x.font = '22px sans-serif'; x.fillStyle = '#9aa4b8'; x.fillText('нажми, чтобы открыть', 160, 140); return new THREE.CanvasTexture(c); })();
+    box(.25, 3.2, .25, 0x2a2f3a, 9.8, 1.6, -4.4); box(.25, 3.2, .25, 0x2a2f3a, 9.8, 1.6, -1.6);
+    box(.2, 2.4, 3.4, 0x14171f, 9.75, 3.2, -3);
+    var scr = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 2.0), new THREE.MeshBasicMaterial({ map: kt })); scr.position.set(9.64, 3.2, -3); scr.rotation.y = -Math.PI / 2; R2W.add(scr);
+    box(1.2, 1.1, 3.0, 0x1f2430, 9.2, .55, -3);
+    // витрина для готовых ПК у задней стены зала (под хитбокс dispB)
+    box(6, .2, 1.4, 0x2a2f3a, 6, 2.3, -9.1); box(.15, 2.3, 1.2, 0x2a2f3a, 3.1, 1.15, -9.1); box(.15, 2.3, 1.2, 0x2a2f3a, 8.9, 1.15, -9.1);
+    box(6, .08, .05, 0x6ee7ff, 6, 2.42, -8.42);
   }
   function moveLoose() {
     var wp = new THREE.Vector3();
@@ -162,8 +225,8 @@
       if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
     } catch (e) { why = String(e && e.message || e); console.error('[room2] init', e); return false; }
     var errs = [];
-    [function () { relocate(); }, function () { moveLoose(); }, function () { installShelf(); }].forEach(function (f) { try { f(); } catch (e) { errs.push(String(e && e.message || e)); console.error('[room2]', e); } });
-    var k = 0, t = setInterval(function () { try { hideOld(); moveLoose(); } catch (e) { } if (++k > 12) clearInterval(t); }, 1500);
+    [function () { relocate(); }, function () { moveLoose(); }, function () { if (!EMPTY) installShelf(); }, function () { if (!EMPTY) buildWorld(); }, function () { try { dec.position.z -= 1.9; dispB.position.z -= 1.9; } catch (e) { } }, function () { scene.remove(shF); scene.remove(shI); scene.remove(deco); }, function () { purgeOld(); }].forEach(function (f) { try { f(); } catch (e) { errs.push(String(e && e.message || e)); console.error('[room2]', e); } });
+    var k = 0, t = setInterval(function () { try { hideOld(); moveLoose(); purgeOld(); } catch (e) { } if (++k > 30) clearInterval(t); }, 1500);
     var ct0 = 0, ci = setInterval(function () { try { if (ceilSync() || ++ct0 > 60) clearInterval(ci); } catch (e) { clearInterval(ci); } }, 700);
     try { P.x = 0; P.z = 4; yaw = Math.PI; } catch (e) { }
     window.__room2goto = function (x, z) { P.x = x; P.z = z; };
