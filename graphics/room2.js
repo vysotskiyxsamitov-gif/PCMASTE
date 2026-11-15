@@ -6,6 +6,7 @@
   window.__r2empty = EMPTY;
   addEventListener('keydown', function (e) { if (e.code === 'F9') { try { localStorage.setItem('pcr2empty', EMPTY ? '0' : '1'); } catch (x) { } location.reload(); } });
   if (!ON) return;
+  window.__r2on = true;
   var B = [["Cube",-13.088,0,-32.908,13.101,.473,8.221],["Cube.001",-13.11,.473,-32.678,-12.85,6.497,7.989],["Cube.002",13.074,.473,-32.332,13.335,6.497,8.419],["Cube.003",-12.807,.473,-32.933,13.09,6.485,-32.117],["Cube.004",-7.77,-.19,7.708,-5.731,6.63,8.406],["Cube.005",-5.694,.317,7.733,13.232,2.119,8.339],["Cube.006",-13.198,5.007,7.796,-7.77,6.612,8.353],["Cube.007",-5.731,5.076,7.793,13.236,6.542,8.423],["Cube.008",.26,2.119,7.615,1.416,5.241,8.224],["Cube.009",7.603,2.119,7.746,8.833,5.084,8.451],["Cube.010",-12.817,.473,-10.744,8.159,6.203,-9.816],["Cube.011",-12.71,.473,-17.014,-9.36,6.029,-16.729],["Cube.012",-6.609,.473,-17.005,9.115,5.668,-16.62],["Cube.013",12.289,.473,-17.138,13.187,6.13,-16.518],["Cube.014",2.146,.473,-32.538,3.2,5.629,-16.833],["Cube.015",-14.284,5.81,-17.088,13.983,6.386,-16.581],["Cube.016",8.159,5.366,-10.717,13.386,6.195,-9.883]];
   function cv(w, h, f) { var c = document.createElement('canvas'); c.width = w; c.height = h; f(c.getContext('2d'), w, h); var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
   var wallT = cv(256, 256, function (g, w, h) { g.fillStyle = '#d9d2c3'; g.fillRect(0, 0, w, h); for (var i = 0; i < 900; i++) { g.fillStyle = 'rgba(0,0,0,' + Math.random() * .03 + ')'; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } g.fillStyle = '#5b4636'; g.fillRect(0, h * .72, w, h * .28); g.fillStyle = '#7a6049'; g.fillRect(0, h * .72, w, 5); });
@@ -32,7 +33,7 @@
   // потолок
   var ce = new THREE.Mesh(new THREE.PlaneGeometry(26.2, 41.2), mCeil); ce.rotation.x = Math.PI / 2; ce.position.set(0, 6.45, -12.4); ce.material.map.repeat.set(26.2 / 2, 41.2 / 2); grp.add(ce);
   // стекло окон
-  var gl = new THREE.Mesh(new THREE.PlaneGeometry(19, 3.1), new THREE.MeshBasicMaterial({ color: 0x9cc8e0, transparent: true, opacity: .12, depthWrite: false })); gl.position.set(3.8, 3.6, 8); grp.add(gl);
+  var gl = new THREE.Mesh(new THREE.PlaneGeometry(19, 3.1), new THREE.MeshBasicMaterial({ color: 0x9cc8e0, transparent: true, opacity: .12, depthWrite: false })); gl.position.set(3.8, 3.6, 8); 
   // свет: по комнатам
   [[0, 5.4, 3, 1.1, 26], [0, 5.3, -13.5, .9, 22], [-6, 5.3, -25, .8, 16], [8, 5.3, -25, .8, 16], [-8, 5.3, -13.5, .6, 14]].forEach(function (p) { var l = new THREE.PointLight(0xfff0d8, p[3], p[4], 1.6); l.position.set(p[0], p[1], p[2]); grp.add(l); });
   var amb = new THREE.AmbientLight(0xffffff, .55); grp.add(amb);
@@ -41,10 +42,12 @@
   window.__r2solid = solid;
   window.blocked = function (x, z) {
     if (x < -12.3 || x > 12.3 || z < -32 || z > 7.2) return true;
+    if (!EMPTY) {                                                              // в пустой комнате объектов нет — упираться не во что, кроме стен
     if (Math.abs(x) < 2.8 && z > 1 && z < 3) return true;                        // стойка клиентов (в зале)
     if (x > 7.1 && x < 10.1 && z > -6 && z < 0) return true;                     // терминал-маркет (в зале)
     if (x > 4.3 && x < 11.7 && z > -27.3 && z < -22.3) return true;              // верстак (в мастерской)
     if (x > -12.9 && x < -11.1 && z > -29.3 && z < -19.7) return true;           // стеллаж с деталями (на складе)
+    }
     for (var i = 0; i < solid.length; i++) { var s = solid[i]; if (x > s[0] && x < s[2] && z > s[1] && z < s[3]) return true; }
     return false;
   };
@@ -116,6 +119,7 @@
   function hasAct(o) { var f = false; o.traverse(function (c) { if (c.userData && typeof c.userData.act === 'function') f = true; }); return f; }
   function keepIt(o) {
     if (EMPTY) {
+      if (o.isPointLight || o.isSpotLight) return false;                     // старые лампы старой комнаты — убираю, свет теперь свой
       if (o.isLight || o === grp || o === R2W || (typeof cam !== 'undefined' && o === cam)) return true;
       if (o.name && o.name.indexOf('R2') === 0) return true;
       if (window.__W && o === window.__W.ST) return true;
@@ -172,6 +176,49 @@
     box(6, .2, 1.4, 0x2a2f3a, 6, 2.3, -9.1); box(.15, 2.3, 1.2, 0x2a2f3a, 3.1, 1.15, -9.1); box(.15, 2.3, 1.2, 0x2a2f3a, 8.9, 1.15, -9.1);
     box(6, .08, .05, 0x6ee7ff, 6, 2.42, -8.42);
   }
+
+  // ================= ВХОД И ОКНА: сужаю проём, ставлю двустворчатую дверь, рамки и стёкла =================
+  function envelope() {
+    var cache = {};
+    function M(c, o) { var k = c + '_' + (o || 1); return cache[k] || (cache[k] = o ? new THREE.MeshLambertMaterial({ color: c, transparent: true, opacity: o, depthWrite: false }) : new THREE.MeshLambertMaterial({ color: c })); }
+    function bx(x0, y0, z0, x1, y1, z1, mat, par) { var m = new THREE.Mesh(new THREE.BoxGeometry(x1 - x0, y1 - y0, z1 - z0), mat); m.position.set((x0 + x1) / 2, (y0 + y1) / 2, (z0 + z1) / 2); (par || grp).add(m); return m; }
+    var FL = .473;
+    // стенки по бокам проёма: остаётся 2.6 м для двери
+    bx(-12.85, FL, 7.796, -11.6, 5.007, 8.353, mWall); bx(-9.0, FL, 7.796, -7.77, 5.007, 8.353, mWall);
+    solid.push([-12.9, 7.5, -11.55, 8.5], [-9.05, 7.5, -7.7, 8.5]);
+    // наличник двери
+    bx(-11.68, FL, 7.7, -11.6, 4.95, 8.45, mTrim); bx(-9.0, FL, 7.7, -8.92, 4.95, 8.45, mTrim); bx(-11.68, 4.88, 7.7, -8.92, 4.98, 8.45, mTrim);
+    // створки
+    var wood = M(0x6b4a2b), glass = M(0xbfe3f0, .25), metal = M(0xcfd4da);
+    function leaf(hx, dir) {
+      var g = new THREE.Group(); g.position.set(hx, 0, 8.07);
+      var W = 1.3 * dir, c0 = Math.min(0, W), c1 = Math.max(0, W);
+      bx(c0, FL + .05, -.05, c1, FL + 1.3, .05, wood, g);          // нижняя филёнка
+      bx(c0, 4.55, -.05, c1, 4.85, .05, wood, g);                    // верх
+      bx(c0, FL + 1.3, -.05, c0 + .12 * dir * (dir > 0 ? 1 : -1) * 0 + (dir > 0 ? .12 : 0), 4.55, .05, wood, g);
+      bx(dir > 0 ? c1 - .12 : c0, FL + 1.3, -.05, dir > 0 ? c1 : c0 + .12, 4.55, .05, wood, g);
+      bx(dir > 0 ? c0 : c1 - .12, FL + 1.3, -.05, dir > 0 ? c0 + .12 : c1, 4.55, .05, wood, g);
+      bx(c0 + .12, FL + 1.3, -.015, c1 - .12, 4.55, .015, glass, g);   // стекло
+      bx(dir > 0 ? c1 - .3 : c0 + .25, 2.6, .05, dir > 0 ? c1 - .25 : c0 + .3, 3.4, .12, metal, g);   // ручка
+      grp.add(g); return g;
+    }
+    var L = leaf(-11.6, 1), Rr = leaf(-9.0, -1), open = false, busy = false;
+    function toggle() {
+      if (busy) return; busy = true; open = !open;
+      var a0L = L.rotation.y, a0R = Rr.rotation.y, aL = open ? -1.45 : 0, aR = open ? 1.45 : 0;
+      var step = function (t) { L.rotation.y = a0L + (aL - a0L) * t; Rr.rotation.y = a0R + (aR - a0R) * t; };
+      try { sfx(open ? 'door' : 'door'); } catch (e) { }
+      if (typeof tw === 'function') tw(.7, step, function () { busy = false; }); else { step(1); busy = false; }
+    }
+    L.userData.act = toggle; Rr.userData.act = toggle;
+    // окна: рамки, средники и стёкла (3 проёма из модели)
+    [[-5.6, .22], [1.45, 7.56], [8.87, 13.0]].forEach(function (p) {
+      var x0 = p[0], x1 = p[1], y0 = 2.14, y1 = 5.05, zf0 = 7.9, zf1 = 8.12, t = .1;
+      bx(x0, y0, zf0, x1, y0 + t, zf1, mTrim); bx(x0, y1 - t, zf0, x1, y1, zf1, mTrim); bx(x0, y0, zf0, x0 + t, y1, zf1, mTrim); bx(x1 - t, y0, zf0, x1, y1, zf1, mTrim);
+      bx((x0 + x1) / 2 - .04, y0, zf0, (x0 + x1) / 2 + .04, y1, zf1, mTrim); bx(x0, (y0 + y1) / 2 - .04, zf0, x1, (y0 + y1) / 2 + .04, zf1, mTrim);
+      bx(x0 + t, y0 + t, 8.0, x1 - t, y1 - t, 8.015, M(0xaed4ea, .16));
+    });
+  }
   function moveLoose() {
     var wp = new THREE.Vector3();
     scene.children.slice().forEach(function (o) {
@@ -225,7 +272,7 @@
       if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
     } catch (e) { why = String(e && e.message || e); console.error('[room2] init', e); return false; }
     var errs = [];
-    [function () { relocate(); }, function () { moveLoose(); }, function () { if (!EMPTY) installShelf(); }, function () { if (!EMPTY) buildWorld(); }, function () { try { dec.position.z -= 1.9; dispB.position.z -= 1.9; } catch (e) { } }, function () { scene.remove(shF); scene.remove(shI); scene.remove(deco); }, function () { purgeOld(); }].forEach(function (f) { try { f(); } catch (e) { errs.push(String(e && e.message || e)); console.error('[room2]', e); } });
+    [function () { relocate(); }, function () { moveLoose(); }, function () { if (!EMPTY) installShelf(); }, function () { if (!EMPTY) buildWorld(); }, function () { try { dec.position.z -= 1.9; dispB.position.z -= 1.9; } catch (e) { } }, function () { scene.remove(shF); scene.remove(shI); scene.remove(deco); }, function () { purgeOld(); }, function () { envelope(); }].forEach(function (f) { try { f(); } catch (e) { errs.push(String(e && e.message || e)); console.error('[room2]', e); } });
     var k = 0, t = setInterval(function () { try { hideOld(); moveLoose(); purgeOld(); } catch (e) { } if (++k > 30) clearInterval(t); }, 1500);
     var ct0 = 0, ci = setInterval(function () { try { if (ceilSync() || ++ct0 > 60) clearInterval(ci); } catch (e) { clearInterval(ci); } }, 700);
     try { P.x = 0; P.z = 4; yaw = Math.PI; } catch (e) { }

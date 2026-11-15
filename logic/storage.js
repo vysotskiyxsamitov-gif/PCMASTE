@@ -17,6 +17,7 @@
   function safe(f) { try { return f(); } catch (e) { console.error('[storage]', e); } }
 
   function go() {
+    if (window.__r2on) { console.log('[storage] «Старый склад» отключён: в новой планировке есть свой склад'); window.__storage = { disabled: true, sync: function () { }, start: function () { }, state: function () { return {}; }, reset: function () { } }; return; }
     var PI = Math.PI;
     /* ---------- позиции ---------- */
     var DZ = 1.9, DW = 2.2, DH = 4.0, BAGCAP = 6;                       // дверь в правой стене (x=10)
