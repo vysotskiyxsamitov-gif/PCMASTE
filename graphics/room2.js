@@ -48,7 +48,7 @@
   function hideOld() {
     var bb = new THREE.Box3(), sz = new THREE.Vector3(), n = 0;
     scene.children.slice().forEach(function (o) {
-      if (o.isLight || o === grp || o === cam || (window.__W && o === window.__W.ST) || o.userData.__r2) return;
+      if (o.isLight || o === grp || (typeof cam !== 'undefined' && o === cam) || (window.__W && o === window.__W.ST) || o.userData.__r2) return;
       var g = o.geometry; if (!o.isMesh && !o.isSprite) return;
       try { bb.setFromObject(o); if (bb.isEmpty()) return; bb.getSize(sz);
         var inside = bb.min.x > -10.6 && bb.max.x < 10.6 && bb.min.z > -8.6 && bb.max.z < 8.6;
@@ -74,7 +74,7 @@
     return true;
   }
   function init() {
-    if (typeof scene === 'undefined' || !scene || !window.P || !window.cam) return false;
+    if (typeof scene === 'undefined' || !scene || typeof P === 'undefined' || !P || typeof cam === 'undefined' || !cam || typeof THREE === 'undefined') return false;
     grp.scale.y = 1.12; grp.position.y = -.473 * 1.12; /* пол новой комнаты на уровне старого (y=0), иначе старая мебель и модели утопают в полу */ scene.add(grp); window.__room2 = grp;
     if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
     var k = 0, t = setInterval(function () { hideOld(); if (++k > 12) clearInterval(t); }, 1500);
