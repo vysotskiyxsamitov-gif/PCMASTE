@@ -189,7 +189,7 @@
     var _next = next; next = function () { ONL.length = 0; try { onUpd(); } catch (e) { } return _next.apply(this, arguments); };
 
     /* ---------- РЕМОНТ ---------- */
-    var SPOT = { x: -1.5, y: 2.16, z: -5.6 }, MON = { x: -2.55, z: -5.6 };
+    var SPOT = { x: -1.5, y: 2.16, z: -5.6 }, MON = { x: -2.55, z: -5.6 }; window.__ordPts = { SPOT: SPOT, MON: MON };
 
     /* ---- звук: сигналы азбукой Морзе ---- */
     var AC2 = null;
@@ -513,7 +513,7 @@
       var b3 = new THREE.Mesh(new THREE.BoxGeometry(.62, .02, .46), cover); b3.position.y = .075; book.add(b3);
       try { var l = lp(book, 'СПРАВОЧНИК', .5, .1, 0, .088, 0, '#fde68a', null); l.rotation.x = -Math.PI / 2; var l2 = lp(book, '· — · —', .4, .08, 0, .088, .12, '#fff', null); l2.rotation.x = -Math.PI / 2; } catch (e) { }
       var hit = new THREE.Mesh(new THREE.BoxGeometry(.9, .5, .7), new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false })); hit.position.y = .2; book.add(hit);
-      book.position.set(2.3, 1.67, -4.5); book.rotation.y = -.3; book.userData.act = openBook; scene.add(book);
+      book.position.set(2.3 + (window.__r2bx || 0), 1.67, -4.5 + (window.__r2bz || 0)); book.rotation.y = -.3; book.userData.act = openBook; scene.add(book);
     })();
 
     function repairReturn(c) {

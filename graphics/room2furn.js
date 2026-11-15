@@ -199,6 +199,12 @@
       var dup = t[0] > -9.6 && t[3] < 9.6 && t[2] > -8.0 && t[5] < 6.9 && t[1] < 3.9;
       if (!dup) out.push(t);
     });
+    out = out.filter(function (t) {
+      var inRect = function (x0, z0, x1, z1) { return t[0] >= x0 && t[3] <= x1 && t[2] >= z0 && t[5] <= z1; };
+      if (inRect(-12.9, -29.6, 2.0, -17.2) && t[5] > -30.4 + 0 && !(t[2] < -30.5)) return false;    // склад: оставляю только задний ряд, остальное освобождено под старый стеллаж и детали
+      if (inRect(5.6, -26.8, 11.9, -22.5)) return false;                                            // мастерская: место старого верстака
+      return true;
+    });
     I = out;
   })();
   window.R2F = I;

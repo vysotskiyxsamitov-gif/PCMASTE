@@ -38,12 +38,36 @@
   window.__r2solid = solid;
   window.blocked = function (x, z) {
     if (x < -12.3 || x > 12.3 || z < -32 || z > 7.2) return true;
-    if ((Math.abs(x) < 3.6 && z < -3.4 && z > -8.2) || (Math.abs(x) < 2.8 && z > 1 && z < 3)) return true;
-    if (x > -10.2 && x < -8.5 && z > -4.6 && z < 4.6) return true;
-    if (x > 7.1 && x < 10.1 && z > -6 && z < 0) return true;
+    if (Math.abs(x) < 2.8 && z > 1 && z < 3) return true;                        // стойка клиентов (в зале)
+    if (x > 7.1 && x < 10.1 && z > -6 && z < 0) return true;                     // терминал-маркет (в зале)
+    if (x > 4.3 && x < 11.7 && z > -27.3 && z < -22.3) return true;              // верстак (в мастерской)
+    if (x > -12.9 && x < -11.1 && z > -29.3 && z < -19.7) return true;           // стеллаж с деталями (на складе)
     for (var i = 0; i < solid.length; i++) { var s = solid[i]; if (x > s[0] && x < s[2] && z > s[1] && z < s[3]) return true; }
     return false;
   };
+  // Раскладка по твоему плану: стеллаж с деталями и детали на полу — на склад, верстак со всем рабочим — в мастерскую
+  var OB = [8, -19];
+  window.__r2bx = OB[0]; window.__r2bz = OB[1];
+  function relocate() {
+    try {
+      shF.position.set(-2.7, 0, -24.5); shI.position.set(-2.7, 0, -24.5); deco.position.set(-2.7, 0, -24.5);
+      flG.position.set(-5, 0, -24); wrk.position.set(10, 0, -19);
+      BP.x += OB[0]; BP.z += OB[1];
+      if (window.__ordPts) { __ordPts.SPOT.x += OB[0]; __ordPts.SPOT.z += OB[1]; __ordPts.MON.x += OB[0]; __ordPts.MON.z += OB[1]; }
+    } catch (e) { console.warn('[room2] relocate', e); }
+  }
+  function moveLoose() {
+    var wp = new THREE.Vector3();
+    scene.children.slice().forEach(function (o) {
+      if (o === grp || o === cam || o.userData.__r2m || o.userData.__r2) return;
+      if (o === shF || o === shI || o === deco || o === flG || o === wrk) return;
+      try {
+        o.getWorldPosition(wp);
+        if (o.isLight) { if (wp.x > -10.6 && wp.x < -8.2 && Math.abs(wp.z) < 5.2) { o.position.x -= 2.7; o.position.z -= 24.5; o.userData.__r2m = 1; } return; }
+        if (wp.x > -4.2 && wp.x < 4.2 && wp.z > -8.4 && wp.z < -3.0 && wp.y < 6) { o.position.x += OB[0]; o.position.z += OB[1]; o.userData.__r2m = 1; }
+      } catch (e) { }
+    });
+  }
   window.__cullX = 14;
   function hideOld() {
     var bb = new THREE.Box3(), sz = new THREE.Vector3(), n = 0;
@@ -77,7 +101,8 @@
     if (typeof scene === 'undefined' || !scene || typeof P === 'undefined' || !P || typeof cam === 'undefined' || !cam || typeof THREE === 'undefined') return false;
     grp.scale.y = 1.12; grp.position.y = -.473 * 1.12; /* пол новой комнаты на уровне старого (y=0), иначе старая мебель и модели утопают в полу */ scene.add(grp); window.__room2 = grp;
     if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
-    var k = 0, t = setInterval(function () { hideOld(); if (++k > 12) clearInterval(t); }, 1500);
+    relocate(); moveLoose();
+    var k = 0, t = setInterval(function () { hideOld(); moveLoose(); if (++k > 12) clearInterval(t); }, 1500);
     var ct0 = 0, ci = setInterval(function () { if (ceilSync() || ++ct0 > 60) clearInterval(ci); }, 700);
     P.x = 0; P.z = 4; try { yaw = Math.PI; } catch (e) { }
     window.__room2goto = function (x, z) { P.x = x; P.z = z; };
