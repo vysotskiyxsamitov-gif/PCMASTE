@@ -237,7 +237,8 @@
       ['M', 'Алё, это Макс. У тебя там свет пропал? Видимо, выбило пробки.'],
       ['Y', 'Да, всё погасло. Компьютер не включается.'],
       ['M', 'Не паникуй. Иди к щитку на улице — он на стене здания, слева от входа.'],
-      ['M', 'Поднимешь рубильник — и свет вернётся. Фонарик на телефоне включи, там темно.']
+      ['M', 'Поднимешь рубильник — и свет вернётся. Фонарик на телефоне включи, там темно.'],
+      ['M', 'Я не буду класть трубку — буду на связи, пока идёшь.']
     ];
     var L1b = [
       ['M', 'Опять пробки выбило? Знаешь, что делать: иди к щитку на улице, слева от входа.'],
@@ -253,6 +254,20 @@
       ['M', 'Опять заперто? Ключ где-то в магазине, поищи — он должен блестеть.']
     ];
 
+    /* ---------- Макс «на трубке»: после звонка герой идёт к щитку с телефоном у уха (в кадре видна рука с телефоном) ---------- */
+    var phWas = false;
+    function phoneHold(t) {
+      try {
+        var on = mode == 'play' && !CALL && st() >= 2 && typeof PHN !== 'undefined' && !!PHN;
+        if (on) {
+          if (!phWas) { CUR = CALLERS.M; drawPhone('talk', t); }
+          PHN.visible = true; phonePose(PH_EAR, 0, t);
+        } else if (phWas && PHN && !CALL) PHN.visible = false;
+        phWas = on;
+      } catch (e) { }
+    }
+    function lineBadge() { }
+
     function start() {
       if (!G || G.sb || mode != 'play' || CALL || isDark()) return false;
       G.ev = G.ev || {};
@@ -266,7 +281,7 @@
       toast('Бах! Выбило пробки — в магазине погас свет.');
       refresh();
       try { save(); } catch (e) { }
-      later(4500, call1);
+      later(2500, call1);
       return true;
     }
 
@@ -303,7 +318,7 @@
       if (!b || b.st != 3 || b.c2 || BO.calling) return;
       if (!lite()) { later(1200, call2); return; }
       BO.calling = true;
-      incomingCall('M', b.n ? L2b : L2, function () {
+      talk((b.n ? L2b : L2).map(function (l) { return [l[0] == 'Y' ? 'Ты' : (CALLERS[l[0]] || CALLERS.M).name, l[1]]; }), function () {
         BO.calling = false;
         var bb = bo();
         if (bb && bb.st == 3) {
@@ -358,7 +373,7 @@
       b.st = 0; b.open = 1; b.n = (b.n || 0) + 1;
       BO.fk = { t: 0, k: 'on' };
       try { sfx('power'); } catch (e) { }
-      toast('Свет включился! Магазин снова работает.');
+      toast('Свет включился! Макс в трубке: «Молодец, всё работает». Положил трубку.');
       try { save(); } catch (e) { }
       refresh();
     }
@@ -478,6 +493,7 @@
       var dt = Math.min(.1, (now - lastNow) / 1000); lastNow = now;
       if (typeof PZ !== 'undefined' && PZ) return;
       BO.t += dt;
+      phoneHold(BO.t);
       safe(function () {
         // мерцание при выключении / включении света
         var want = (inGame() && isDark()) ? 1 : 0;
@@ -515,6 +531,7 @@
           if (hasKey()) { if (!BO.keyHint) { BO.keyHint = true; toast('Щиток заперт, но ключ у тебя в инвентаре — нажми E на щитке.'); } }
           else discover();
         }
+        lineBadge();
         invUI();
         schedule(1);
       });

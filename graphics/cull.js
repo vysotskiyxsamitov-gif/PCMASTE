@@ -6,12 +6,12 @@
     if (typeof R === 'undefined' || typeof scene === 'undefined' || !window.__W || !window.__W.ST || window.__cullInit) return false;
     window.__cullInit = true;
     var ST = window.__W.ST, fr = new THREE.Frustum(), pm = new THREE.Matrix4(),
-      box = new THREE.Box3(new THREE.Vector3(-12, -.5, 6), new THREE.Vector3(12, 11, 10)),   // передняя стена с окнами и дверью
+      box = new THREE.Box3(new THREE.Vector3(-14, -.5, 6), new THREE.Vector3(14, 11, 10)),   // передняя стена с окнами и дверью
       hid = 0, _r = R.render.bind(R);
     R.render = function (s, c) {
       try {
         if (window.__cull !== false && c && c.position) {
-          if (c.position.z < 7.3 && Math.abs(c.position.x) < 10.2 && c.position.y > 0) {
+          if (c.position.z < 7.3 && Math.abs(c.position.x) < (window.__cullX || 10.2) && c.position.y > 0) {
             c.updateMatrixWorld(); pm.multiplyMatrices(c.projectionMatrix, c.matrixWorldInverse); fr.setFromProjectionMatrix(pm);
             var see = fr.intersectsBox(box); if (ST.visible !== see) { ST.visible = see; hid += see ? 0 : 1; }
           } else if (!ST.visible) ST.visible = true;
