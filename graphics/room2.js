@@ -56,6 +56,59 @@
       if (window.__ordPts) { __ordPts.SPOT.x += OB[0]; __ordPts.SPOT.z += OB[1]; __ordPts.MON.x += OB[0]; __ordPts.MON.z += OB[1]; }
     } catch (e) { console.warn('[room2] relocate', e); }
   }
+
+  // ---- Склад: дополнительные стеллажи по классам деталей. Что не влезло на главный стеллаж, раскладывается сюда ----
+  var RK = [];     // по классу c: {x0, z, y0:[...]}  стеллаж длиной 3.2 вдоль x, лицом к +z
+  var RACKPOS = { 0: [-10.8, -23.6], 1: [-7.2, -23.6], 2: [-3.6, -23.6], 3: [-10.8, -27.4], 4: [-7.2, -27.4], 5: [-3.6, -27.4], 6: [-3.6, -20.2] };
+  var ovG = null;
+  function buildRacks() {
+    if (ovG) return;
+    ovG = new THREE.Group(); ovG.name = 'R2RACKS'; scene.add(ovG);
+    var mP = new THREE.MeshLambertMaterial({ color: 0x4a5460 }), mB = new THREE.MeshLambertMaterial({ color: 0x8a8f96 }), mHit = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+    function box(w, h, d, m, x, y, z) { var o = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), m); o.position.set(x, y, z); ovG.add(o); return o; }
+    Object.keys(RACKPOS).forEach(function (k) {
+      var c = +k, x0 = RACKPOS[k][0], z = RACKPOS[k][1], L = 3.2, D = 1.0;
+      [[x0, z - D / 2], [x0 + L, z - D / 2], [x0, z + D / 2], [x0 + L, z + D / 2]].forEach(function (p) { box(.1, 4.2, .1, mP, p[0], 2.1, p[1]); });
+      box(L, .1, .06, mP, x0 + L / 2, 4.1, z + D / 2); box(L, 3.9, .04, mP, x0 + L / 2, 2.1, z - D / 2);
+      [.3, 1.5, 2.7].forEach(function (y) { box(L, .08, D, mB, x0 + L / 2, y, z); });
+      try { lp(ovG, SECN[c], 2.9, .32, x0 + L / 2, 4.35, z + D / 2 + .02, '#fff', CCOL[c], 0); } catch (e) { }
+      var h = box(L, 3.9, D + .2, mHit, x0 + L / 2, 2.1, z); h.userData.act = function () { putSec(c); }; h.userData.sec = 1;
+      solid.push([x0 - .1, z - .65, x0 + L + .1, z + .65]);
+      RK[c] = { x0: x0, z: z, L: L, D: D, tiers: [.34, 1.54, 2.74] };
+    });
+    // мои «декоративные» блоки на складе были лишними — теперь тут настоящие стеллажи
+  }
+  var ovI = null;
+  function overflowItems() {
+    if (!ovI) { ovI = new THREE.Group(); ovI.name = 'R2OVF'; scene.add(ovI); }
+    while (ovI.children.length) ovI.remove(ovI.children[0]);
+    if (!G || !RK.length) return;
+    var n = need(), cnt = [0, 0, 0, 0, 0, 0, 0];
+    G.st.filter(function (x) { return !x.fl && !x.h && !x.pl; }).forEach(function (x) {
+      var k = cnt[x.c]++, bd = BOXD[x.c], w = bd[0], h = bd[1], dp = bd[2];
+      var sA = [{ z0: -7.2, z1: -1.7 }, { z0: -1.5, z1: 3.4 }, { z0: -7.2, z1: -4.7 }, { z0: -4.5, z1: -.5 }, { z0: -.3, z1: 2.5 }, { z0: -7.2, z1: .2 }, { z0: 3.6, z1: 7.2 }][x.c];
+      var per = Math.max(1, Math.floor((sA.z1 - sA.z0) / (w + .06))), stk = Math.max(1, Math.floor(.95 / (h + .03))), cap = per * stk;
+      if (k < cap) return;                                  // поместилось на главном стеллаже
+      var r = RK[x.c]; if (!r) return;
+      var m = k - cap, perR = Math.max(1, Math.floor((r.L - .2) / (w + .06))), tcap = perR * stk, tier = Math.floor(m / tcap);
+      if (tier >= 3) return;
+      var q = m % tcap, lv = Math.floor(q / perR), col = q % perR, hl = x.c == n;
+      var side = new THREE.MeshStandardMaterial({ map: sideTex(x), roughness: .7, metalness: .05 });
+      var front = new THREE.MeshStandardMaterial({ map: boxTex(x), roughness: .35, metalness: .15, emissive: hl ? 0x22d3ee : 0, emissiveIntensity: hl ? .35 : 0 });
+      var b = new THREE.Mesh(new THREE.BoxGeometry(dp, h, w), [front, side, side, side, side, side]);
+      b.rotation.y = -Math.PI / 2;
+      b.position.set(r.x0 + .15 + w / 2 + col * (w + .06), r.tiers[tier] + .04 + lv * (h + .03) + h / 2, r.z + .05);
+      b.castShadow = b.receiveShadow = true; b.userData.act = function () { take(x); }; ovI.add(b);
+    });
+  }
+  function installShelf() {
+    try {
+      buildRacks();
+      var _sh = shelf;
+      shelf = function () { _sh.apply(this, arguments); try { overflowItems(); } catch (e) { console.warn('[room2] overflow', e); } };
+      shelf();
+    } catch (e) { console.warn('[room2] racks', e); }
+  }
   function moveLoose() {
     var wp = new THREE.Vector3();
     scene.children.slice().forEach(function (o) {
@@ -79,6 +132,7 @@
         if (!inside) return;
         // старая «коробка» комнаты: большие стены, пол, потолок
         if (g && g.type === 'PlaneGeometry' && (g.parameters.width >= 8 || g.parameters.height >= 8) && !o.isSprite && !(g.parameters.width === 8 && g.parameters.height === 2)) { o.visible = false; o.userData.__r2 = 1; n++; return; }
+        if (!o.isSprite && sz.y < .25 && (sz.x > 15 || sz.z > 14) && g && g.type === 'BoxGeometry') { o.visible = false; o.userData.__r2 = 1; n++; return; }
         // старая входная дверь и рама на передней стене — теперь там окна новой комнаты
         if (bb.min.z > 7.4) { o.visible = false; o.userData.__r2 = 1; n++; return; }
         // то, что висело на старой задней стене, переносим на новую
@@ -101,7 +155,7 @@
     if (typeof scene === 'undefined' || !scene || typeof P === 'undefined' || !P || typeof cam === 'undefined' || !cam || typeof THREE === 'undefined') return false;
     grp.scale.y = 1.12; grp.position.y = -.473 * 1.12; /* пол новой комнаты на уровне старого (y=0), иначе старая мебель и модели утопают в полу */ scene.add(grp); window.__room2 = grp;
     if (window.BAL) { BAL.spawnEvery = [99999, 99999]; BAL.onlineEvery = [99999, 99999]; }
-    relocate(); moveLoose();
+    relocate(); moveLoose(); installShelf();
     var k = 0, t = setInterval(function () { hideOld(); moveLoose(); if (++k > 12) clearInterval(t); }, 1500);
     var ct0 = 0, ci = setInterval(function () { if (ceilSync() || ++ct0 > 60) clearInterval(ci); }, 700);
     P.x = 0; P.z = 4; try { yaw = Math.PI; } catch (e) { }
