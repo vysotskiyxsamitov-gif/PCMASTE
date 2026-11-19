@@ -2,7 +2,7 @@
 (function () {
   var ON = true; try { ON = localStorage.getItem('pcroom2') !== '0'; } catch (e) { }
   addEventListener('keydown', function (e) { if (e.code === 'F8') { try { localStorage.setItem('pcroom2', ON ? '0' : '1'); } catch (x) { } location.reload(); } });
-  var EMPTY = true; try { EMPTY = localStorage.getItem('pcr2empty') !== '0'; } catch (e) { }
+  var EMPTY = false; try { EMPTY = localStorage.getItem('pcr2empty') === '1'; } catch (e) { }
   window.__r2empty = EMPTY;
   addEventListener('keydown', function (e) { if (e.code === 'F9') { try { localStorage.setItem('pcr2empty', EMPTY ? '0' : '1'); } catch (x) { } location.reload(); } });
   if (!ON) return;
