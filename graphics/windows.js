@@ -78,7 +78,7 @@
             x.fillStyle = '#fff'; x.textAlign = 'center'; x.font = '800 46px system-ui,Segoe UI,sans-serif'; x.fillText(pdef[0][0], W / 2, 120); x.fillText(pdef[0][1], W / 2, 172);
             x.font = '600 22px system-ui,Segoe UI,sans-serif'; x.fillStyle = pdef[1]; x.fillText(pdef[2], W / 2, 290);
           }, 1, 1);
-          dPlane(1.05, 1.4, c[0], 2.95 + kk * 1.75, t, .7);
+          /* постеры убраны */
         })(posters[c[1] * 2 + k], k);
       });
       var nm = new THREE.MeshBasicMaterial({ color: 0x22d3ee });

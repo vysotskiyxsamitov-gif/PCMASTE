@@ -64,7 +64,7 @@
     if (x < -12.3 || x > 12.3 || z < -32 || z > 7.2) return true;
     if (!EMPTY) {                                                              // в пустой комнате объектов нет — упираться не во что, кроме стен
     if (Math.abs(x) < 2.8 && z > 1 && z < 3) return true;                        // стойка клиентов (в зале)
-    if (x > 7.1 && x < 10.1 && z > -6 && z < 0) return true;                     // терминал-маркет (в зале)
+
     if (x > 4.3 && x < 11.7 && z > -27.3 && z < -22.3) return true;              // верстак (в мастерской)
     if (x > -12.9 && x < -11.1 && z > -29.3 && z < -19.7) return true;           // стеллаж с деталями (на складе)
     }
@@ -188,10 +188,18 @@
     box(.1, 1.5, .1, 0x888888, bx0 - 2.6, 2.3, bz0 - .8); box(1.0, .1, .1, 0x888888, bx0 - 2.1, 3.0, bz0 - .8); box(.6, .15, .5, 0xfff2c0, bx0 - 1.7, 2.95, bz0 - .8); // лампа
     // киоск «МАРКЕТ» (терминал заказа деталей) — рядом с хитбоксом
     var kt = (function () { var c = document.createElement('canvas'); c.width = 320; c.height = 200; var x = c.getContext('2d'); var g = x.createLinearGradient(0, 0, 320, 200); g.addColorStop(0, '#0b2a5a'); g.addColorStop(1, '#3b0f6a'); x.fillStyle = g; x.fillRect(0, 0, 320, 200); x.fillStyle = '#fff'; x.textAlign = 'center'; x.font = 'bold 54px sans-serif'; x.fillText('МАРКЕТ', 160, 100); x.font = '22px sans-serif'; x.fillStyle = '#9aa4b8'; x.fillText('нажми, чтобы открыть', 160, 140); return new THREE.CanvasTexture(c); })();
+    var k0 = R2W.children.length;
     box(.25, 3.2, .25, 0x2a2f3a, 9.8, 1.6, -4.4); box(.25, 3.2, .25, 0x2a2f3a, 9.8, 1.6, -1.6);
     box(.2, 2.4, 3.4, 0x14171f, 9.75, 3.2, -3);
     var scr = new THREE.Mesh(new THREE.PlaneGeometry(3.1, 2.0), new THREE.MeshBasicMaterial({ map: kt })); scr.position.set(9.64, 3.2, -3); scr.rotation.y = -Math.PI / 2; R2W.add(scr);
     box(1.2, 1.1, 3.0, 0x1f2430, 9.2, .55, -3);
+    // МАРКЕТ перенесён в мастерскую (у зоны сборки ПК, правая стена)
+    try {
+      var KG = new THREE.Group(); KG.name = 'R2MARKET'; KG.position.set(3.0, 0, -21); KG.userData.keep = 1;
+      R2W.children.slice(k0).forEach(function (c) { KG.add(c); }); R2W.add(KG);
+      if (typeof tm !== 'undefined') tm.position.set(9.6 + 3.0, 3, -3 - 21);
+      if (window.__r2solid) window.__r2solid.push([11.4, -25.7, 12.9, -22.3]);
+    } catch (e) { console.warn('[room2] market move', e); }
     // витрина для готовых ПК у задней стены зала (под хитбокс dispB)
     box(6, .2, 1.4, 0x2a2f3a, 6, 2.3, -9.1); box(.15, 2.3, 1.2, 0x2a2f3a, 3.1, 1.15, -9.1); box(.15, 2.3, 1.2, 0x2a2f3a, 8.9, 1.15, -9.1);
     box(6, .08, .05, 0x6ee7ff, 6, 2.42, -8.42);

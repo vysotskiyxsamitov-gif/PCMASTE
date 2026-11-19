@@ -22,10 +22,7 @@
     // часы
     var clk = tex(256, 256, function (x, W, H) { x.fillStyle = '#f4f1ea'; x.beginPath(); x.arc(128, 128, 120, 0, 7); x.fill(); x.strokeStyle = '#222'; x.lineWidth = 8; x.stroke(); x.lineWidth = 4; for (var i = 0; i < 12; i++) { var a = i / 12 * 6.283; x.beginPath(); x.moveTo(128 + Math.sin(a) * 100, 128 - Math.cos(a) * 100); x.lineTo(128 + Math.sin(a) * 112, 128 - Math.cos(a) * 112); x.stroke(); } x.lineWidth = 9; x.beginPath(); x.moveTo(128, 128); x.lineTo(128, 60); x.stroke(); x.lineWidth = 6; x.beginPath(); x.moveTo(128, 128); x.lineTo(180, 150); x.stroke(); });
     var cm = plane(1.1, 1.1, clk, -2.0, 5.0, -9.66, 0); cm.geometry = new THREE.CircleGeometry(.55, 32);
-    // постеры на правой стене зала
-    [['ВИДЕОКАРТЫ', 'RTX · RX', '#15324f', '#1d6fb0', -8.4], ['ПРОЦЕССОРЫ', 'Core · Ryzen', '#3a1d4f', '#7a3fb0', 3.4], ['СБОРКА НА ЗАКАЗ', 'любой бюджет', '#4f2a1d', '#b0642a', -1.0]].forEach(function (p) {
-      var t = sign(p[0], p[1], p[2], p[3], 2.4, 3.2); t.repeat.set(1, 1); plane(2.4, 3.2, t, 13.0, 3.7, p[4], -Math.PI / 2); frame(2.4, 3.2, 13.0, 3.7, p[4], -Math.PI / 2);
-    });
+    // (постеры убраны по просьбе)
     // картины слева и зеркало
     var art = tex(256, 192, function (x, W, H) { x.fillStyle = '#10243a'; x.fillRect(0, 0, W, H); for (var i = 0; i < 9; i++) { x.fillStyle = 'hsl(' + (190 + i * 14) + ',70%,' + (35 + i * 4) + '%)'; x.fillRect(i * 28 + 6, H - 30 - i * 14, 22, 30 + i * 14); } });
     plane(3.2, 2.4, art, -12.8, 4.2, 4.0, Math.PI / 2); frame(3.2, 2.4, -12.8, 4.2, 4.0, Math.PI / 2);
