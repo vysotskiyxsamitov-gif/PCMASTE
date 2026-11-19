@@ -10,19 +10,38 @@
   var B = [["Cube",-13.088,0,-32.908,13.101,.473,8.221],["Cube.001",-13.11,.473,-32.678,-12.85,6.497,7.989],["Cube.002",13.074,.473,-32.332,13.335,6.497,8.419],["Cube.003",-12.807,.473,-32.933,13.09,6.485,-32.117],["Cube.004",-7.77,-.19,7.708,-5.731,6.63,8.406],["Cube.005",-5.694,.317,7.733,13.232,2.119,8.339],["Cube.006",-13.198,5.007,7.796,-7.77,6.612,8.353],["Cube.007",-5.731,5.076,7.793,13.236,6.542,8.423],["Cube.008",.26,2.119,7.615,1.416,5.241,8.224],["Cube.009",7.603,2.119,7.746,8.833,5.084,8.451],["Cube.010",-12.817,.473,-10.744,8.159,6.203,-9.816],["Cube.011",-12.71,.473,-17.014,-9.36,6.029,-16.729],["Cube.012",-6.609,.473,-17.005,9.115,5.668,-16.62],["Cube.013",12.289,.473,-17.138,13.187,6.13,-16.518],["Cube.014",2.146,.473,-32.538,3.2,5.629,-16.833],["Cube.015",-14.284,5.81,-17.088,13.983,6.386,-16.581],["Cube.016",8.159,5.366,-10.717,13.386,6.195,-9.883]];
   function cv(w, h, f) { var c = document.createElement('canvas'); c.width = w; c.height = h; f(c.getContext('2d'), w, h); var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
   function nz(g,w,h,n,a){for(var i=0;i<n;i++){g.fillStyle='rgba('+(Math.random()<.5?'255,255,255':'0,0,0')+','+Math.random()*a+')';g.fillRect(Math.random()*w,Math.random()*h,2,2);}}
-  var wallT = cv(256, 256, function (g, w, h) { g.fillStyle = '#d9d2c3'; g.fillRect(0, 0, w, h); for (var i = 0; i < 900; i++) { g.fillStyle = 'rgba(0,0,0,' + Math.random() * .03 + ')'; g.fillRect(Math.random() * w, Math.random() * h, 2, 2); } g.fillStyle = '#5b4636'; g.fillRect(0, h * .72, w, h * .28); g.fillStyle = '#7a6049'; g.fillRect(0, h * .72, w, 5); });
-  var floorT = cv(256, 256, function (g, w, h) { for (var y = 0; y < 4; y++)for (var x = 0; x < 4; x++) { var v = 120 + ((x + y) & 1) * 14 + Math.random() * 8; g.fillStyle = 'rgb(' + v + ',' + (v - 14) + ',' + (v - 32) + ')'; g.fillRect(x * 64, y * 64, 63, 63); } });
+  var wallT = cv(512, 512, function (g, w, h) {
+    g.fillStyle = '#d8d1c2'; g.fillRect(0, 0, w, h);
+    for (var i = 0; i < 2600; i++) { g.fillStyle = 'rgba(' + (Math.random() < .5 ? '255,255,255' : '90,70,40') + ',' + Math.random() * .035 + ')'; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 40); }
+    var wy = h * .78;                                                       // панели у пола: нижние ~1.4 ед. стены
+    var gr = g.createLinearGradient(0, wy, 0, h); gr.addColorStop(0, '#6a4e3a'); gr.addColorStop(1, '#4f3a2b'); g.fillStyle = gr; g.fillRect(0, wy, w, h - wy);
+    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (var k = 0; k < 4; k++) { var x0 = k * 128 + 14; g.strokeRect(x0, wy + 16, 100, h - wy - 44); }
+    g.strokeStyle = 'rgba(255,230,190,.18)'; g.lineWidth = 2; for (var k2 = 0; k2 < 4; k2++) g.strokeRect(k2 * 128 + 17, wy + 19, 94, h - wy - 50);
+    g.fillStyle = '#8a6a4f'; g.fillRect(0, wy - 8, w, 10); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(0, wy - 8, w, 2);     // поручень
+    g.fillStyle = '#2d2119'; g.fillRect(0, h - 22, w, 22);                                                              // плинтус
+    g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, w, 10);                                                           // тень у потолка
+  });
+  var floorT = cv(512, 512, function (g, w, h) {
+    var n = 4, t = w / n;
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+      var v = 138 + ((x + y) & 1) * 10 + Math.random() * 10;
+      var gr = g.createLinearGradient(x * t, y * t, (x + 1) * t, (y + 1) * t); gr.addColorStop(0, 'rgb(' + (v + 8) + ',' + (v - 4) + ',' + (v - 22) + ')'); gr.addColorStop(1, 'rgb(' + (v - 8) + ',' + (v - 18) + ',' + (v - 38) + ')');
+      g.fillStyle = gr; g.fillRect(x * t + 2, y * t + 2, t - 4, t - 4);
+      for (var i = 0; i < 60; i++) { g.fillStyle = 'rgba(' + (Math.random() < .5 ? '255,255,255' : '0,0,0') + ',' + Math.random() * .05 + ')'; g.fillRect(x * t + Math.random() * t, y * t + Math.random() * t, 2 + Math.random() * 14, 1); }
+    }
+    g.fillStyle = 'rgba(40,30,22,.85)'; for (var q = 0; q <= n; q++) { g.fillRect(q * t - 2, 0, 4, h); g.fillRect(0, q * t - 2, w, 4); }
+  });
   var ceilT = cv(128, 128, function (g, w, h) { g.fillStyle = '#e8e6e0'; g.fillRect(0, 0, w, h); g.strokeStyle = '#bbb'; g.strokeRect(0, 0, w, h); });
   wallT.repeat.set(1, 1); floorT.repeat.set(1, 1); ceilT.repeat.set(1, 1);
   var mWall = new THREE.MeshLambertMaterial({ map: wallT }), mFloor = new THREE.MeshLambertMaterial({ map: floorT }), mCeil = new THREE.MeshBasicMaterial({ map: ceilT }), mTrim = new THREE.MeshLambertMaterial({ color: 0x3a2d24 });
-  var grp = new THREE.Group(); grp.name = 'ROOM2';
+  var grp = new THREE.Group(); grp.name = 'ROOM2'; grp.userData.keep = 1; grp.userData.__r2 = 1;   // keep: batch.js не склеивает комнату (из-за склейки стены пропадали)
   var solid = [];
   function box(b, mat, tile) {
     var w = b[4] - b[1], h = b[5] - b[2], d = b[6] - b[3];
     var g = new THREE.BoxGeometry(w, h, d), uv = g.attributes.uv, pos = g.attributes.position;
     for (var i = 0; i < uv.count; i++) { var n = g.attributes.normal; var nx = Math.abs(n.getX(i)), ny = Math.abs(n.getY(i)); var x = pos.getX(i) + (b[1] + b[4]) / 2, y = pos.getY(i) + (b[2] + b[5]) / 2, z = pos.getZ(i) + (b[3] + b[6]) / 2;
-      if (ny > .5) uv.setXY(i, x / 3, z / 3); else if (nx > .5) uv.setXY(i, z / 3, y / 3.2); else uv.setXY(i, x / 3, y / 3.2); }
-    var m = new THREE.Mesh(g, mat); m.position.set((b[1] + b[4]) / 2, (b[2] + b[5]) / 2, (b[3] + b[6]) / 2); grp.add(m); return m;
+      if (ny > .5) uv.setXY(i, x / 3, z / 3); else if (nx > .5) uv.setXY(i, z / 6.4, y / 6.4); else uv.setXY(i, x / 6.4, y / 6.4); }
+    var m = new THREE.Mesh(g, mat); m.position.set((b[1] + b[4]) / 2, (b[2] + b[5]) / 2, (b[3] + b[6]) / 2); m.frustumCulled = false; grp.add(m); return m;
   }
   B.forEach(function (b, i) {
     if (i === 0) { var f = box(b, mFloor); f.position.y -= .0; return; }

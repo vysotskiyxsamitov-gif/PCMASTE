@@ -2,8 +2,8 @@
    Размеры взяты из stend.blend / stoll.blend (1 ед. Blender = SC игровых). Положение и масштаб — в таблице PLACE ниже. */
 (function () {
   var PLACE = {
-    stend: { x: 0.5, z: 1.9, sc: 1.7, rot: 0 },
-    stoll: { x: -8.0, z: -6.4, sc: 1.2, rot: 0 }
+    stend: { x: 0.5, z: 1.75, sx: 1.75, sy: 1.7, sz: 1.15, rot: 0 },
+    stoll: { x: -8.0, z: -6.4, sx: 1.2, sy: 1.2, sz: 1.2, rot: 0 }
   };
   var STEND = [
     [-1.936,0.0,-0.477,2.042,1.262,0.516,0xd8d2c4,'s'],
@@ -29,13 +29,13 @@
     var inv = 1 / (g.scale.y || 1), mats = {};
     function mat(c, f) { var k = c + f; return mats[k] || (mats[k] = f === 'g' ? new THREE.MeshLambertMaterial({ color: c, transparent: true, opacity: .35, depthWrite: false }) : new THREE.MeshLambertMaterial({ color: c })); }
     [['stend', STEND], ['stoll', STOLL]].forEach(function (p) {
-      var pl = PLACE[p[0]], grp = new THREE.Group(); grp.name = 'USER_' + p[0];
+      var pl = PLACE[p[0]], grp = new THREE.Group(); grp.name = 'USER_' + p[0]; grp.userData.keep = 1;
       var x0 = 1e9, z0 = 1e9, x1 = -1e9, z1 = -1e9;
       p[1].forEach(function (it) {
-        var s = pl.sc, w = (it[3] - it[0]) * s, h = (it[4] - it[1]) * s, d = (it[5] - it[2]) * s;
+        var w = (it[3] - it[0]) * pl.sx, h = (it[4] - it[1]) * pl.sy, d = (it[5] - it[2]) * pl.sz;
         var m = new THREE.Mesh(new THREE.BoxGeometry(w, h, d), mat(it[6], it[7]));
-        m.position.set((it[0] + it[3]) / 2 * s, (it[1] + it[4]) / 2 * s, (it[2] + it[5]) / 2 * s); grp.add(m);
-        x0 = Math.min(x0, it[0] * s); x1 = Math.max(x1, it[3] * s); z0 = Math.min(z0, it[2] * s); z1 = Math.max(z1, it[5] * s);
+        m.position.set((it[0] + it[3]) / 2 * pl.sx, (it[1] + it[4]) / 2 * pl.sy, (it[2] + it[5]) / 2 * pl.sz); grp.add(m);
+        x0 = Math.min(x0, it[0] * pl.sx); x1 = Math.max(x1, it[3] * pl.sx); z0 = Math.min(z0, it[2] * pl.sz); z1 = Math.max(z1, it[5] * pl.sz);
       });
       /* группа комнаты растянута по Y (scale.y) — компенсирую, чтобы модель не вытягивалась */
       grp.scale.y = inv; grp.position.set(pl.x, 0.473 + 0, pl.z); grp.rotation.y = pl.rot || 0; g.add(grp);
@@ -43,5 +43,18 @@
     });
     return true;
   }
+  /* старая касса/POS/мини-ПК лежали на прилавке на высоте 1.65 — поднимаю на столешницу стенда, чтобы не утонули */
+  var rk = 0, ri = setInterval(function () {
+    try {
+      if (typeof scene === 'undefined' || !window.__room2) return;
+      var bb = new THREE.Box3(), dy = 1.292 * PLACE.stend.sy - 1.65;
+      scene.children.forEach(function (o) {
+        if (o.userData.__raised || o === window.__room2 || o.isLight || (o.name && o.name.indexOf('R2') === 0)) return;
+        bb.setFromObject(o); if (bb.isEmpty()) return;
+        if (bb.min.y > 1.4 && bb.min.y < 2.4 && bb.max.y < 3.4 && bb.min.x > -2.7 && bb.max.x < 2.8 && bb.min.z > 1.3 && bb.max.z < 2.7) { o.position.y += dy; o.userData.__raised = 1; }
+      });
+    } catch (e) { }
+    if (++rk > 25) clearInterval(ri);
+  }, 1500);
   var n = 0, iv = setInterval(function () { try { if (build() || ++n > 200) clearInterval(iv); } catch (e) { clearInterval(iv); console.error('[userobj]', e); } }, 400);
 })();
