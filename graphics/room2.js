@@ -55,8 +55,8 @@
   // стекло окон
   var gl = new THREE.Mesh(new THREE.PlaneGeometry(19, 3.1), new THREE.MeshBasicMaterial({ color: 0x9cc8e0, transparent: true, opacity: .12, depthWrite: false })); gl.position.set(3.8, 3.6, 8); 
   // свет: по комнатам
-  [[0, 5.4, 3, 1.1, 26], [0, 5.3, -13.5, .9, 22], [-6, 5.3, -25, .8, 16], [8, 5.3, -25, .8, 16], [-8, 5.3, -13.5, .6, 14]].forEach(function (p) { var l = new THREE.PointLight(0xfff0d8, p[3], p[4], 1.6); l.position.set(p[0], p[1], p[2]); grp.add(l); });
-  var amb = new THREE.AmbientLight(0xffffff, .55); grp.add(amb);
+  [[0, 5.4, 3, 1.1, 26], [0, 5.3, -13.5, .9, 22], [-6, 5.3, -25, .8, 16], [8, 5.3, -25, .8, 16], [-8, 5.3, -13.5, .6, 14]].forEach(function (p) { var l = new THREE.PointLight(0xfff0d8, p[3]*.8, p[4], 1.6); l.position.set(p[0], p[1], p[2]); grp.add(l); });
+  var amb = new THREE.AmbientLight(0xffffff, .38); grp.add(amb);
   window.__r2solid = solid;
   // коллизии: стены новой комнаты + старая мебель (прилавок, верстак, стеллаж, терминал) — она осталась на месте
   window.__r2solid = solid;

@@ -3,7 +3,7 @@
 (function () {
   if (window.__menu2Loaded) return;
   window.__menu2Loaded = 1;
-  var BUILD = 'сборка 13.14-B';
+  var BUILD = 'сборка 13.14-D';
 
   function ready() { try { return typeof UI === 'function' && typeof play === 'function' && typeof cont === 'function' && typeof ld === 'function' && !!document.getElementById('ui'); } catch (e) { return false; } }
 
