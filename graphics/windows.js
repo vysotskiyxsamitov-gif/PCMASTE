@@ -66,7 +66,7 @@
           x.shadowColor = '#22d3ee'; x.shadowBlur = 24; x.fillStyle = '#e9fbff'; x.font = '800 78px system-ui,Segoe UI,sans-serif'; x.textAlign = 'center'; x.textBaseline = 'middle';
           x.fillText(band[bi], W / 2, H / 2 - 12); x.shadowBlur = 0; x.fillStyle = '#a855f7'; x.fillRect(W / 2 - 180, H - 82, 360, 6);
         }, 1, 1);
-        dPlane(5.6, 1.75, cx, 6.7, t, .55);
+        /* баннеры убраны */
       });
       var posters = [[['ХИТ', 'ПРОДАЖ'], '#f97316', 'сборки от $399'], [['RAM', 'DDR5'], '#22d3ee', 'в наличии'], [['SSD', 'NVMe'], '#a855f7', 'скорость x10'], [['БЛОК', 'ПИТАНИЯ'], '#22c55e', 'от 450 Вт']];
       [[-2.25, 0], [2.25, 1]].forEach(function (c) {

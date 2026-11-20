@@ -13,12 +13,12 @@
   var wallT = cv(512, 512, function (g, w, h) {
     g.fillStyle = '#d8d1c2'; g.fillRect(0, 0, w, h);
     for (var i = 0; i < 2600; i++) { g.fillStyle = 'rgba(' + (Math.random() < .5 ? '255,255,255' : '90,70,40') + ',' + Math.random() * .035 + ')'; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 40); }
-    var wy = h * .78;                                                       // панели у пола: нижние ~1.4 ед. стены
-    var gr = g.createLinearGradient(0, wy, 0, h); gr.addColorStop(0, '#6a4e3a'); gr.addColorStop(1, '#4f3a2b'); g.fillStyle = gr; g.fillRect(0, wy, w, h - wy);
-    g.strokeStyle = 'rgba(0,0,0,.35)'; g.lineWidth = 3; for (var k = 0; k < 4; k++) { var x0 = k * 128 + 14; g.strokeRect(x0, wy + 16, 100, h - wy - 44); }
-    g.strokeStyle = 'rgba(255,230,190,.18)'; g.lineWidth = 2; for (var k2 = 0; k2 < 4; k2++) g.strokeRect(k2 * 128 + 17, wy + 19, 94, h - wy - 50);
-    g.fillStyle = '#8a6a4f'; g.fillRect(0, wy - 8, w, 10); g.fillStyle = 'rgba(255,255,255,.25)'; g.fillRect(0, wy - 8, w, 2);     // поручень
-    g.fillStyle = '#2d2119'; g.fillRect(0, h - 22, w, 22);                                                              // плинтус
+    // (панели и плинтус убраны)
+    // (панели и плинтус убраны)
+    // (панели и плинтус убраны)
+    // (панели и плинтус убраны)
+    // (панели и плинтус убраны)
+    // (панели и плинтус убраны)
     g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, w, 10);                                                           // тень у потолка
   });
   var floorT = cv(512, 512, function (g, w, h) {
@@ -98,7 +98,7 @@
       box(L, .1, .06, mP, x0 + L / 2, 4.6, z + D / 2); box(L, 4.4, .04, mP, x0 + L / 2, 2.35, z - D / 2);
       [.3, 1.4, 2.5, 3.6].forEach(function (y) { box(L, .08, D, mB, x0 + L / 2, y, z); });
       try { lp(ovG, SECN[c], 3.3, .34, x0 + L / 2, 4.85, z + D / 2 + .02, '#fff', CCOL[c], 0); } catch (e) { }
-      var h = box(L, 4.4, D + .2, mHit, x0 + L / 2, 2.35, z); h.userData.act = function () { putSec(c); }; h.userData.sec = 1;
+      var h = box(L, 4.4, D + .2, mHit, x0 + L / 2, 2.35, z); h.userData.act = function () { try { if (hand && hand.c != c) { putSec(hand.c); return; } } catch (e) { } putSec(c); };   // общие полки: деталь можно класть на любую — она сама уйдёт в свой отсек h.userData.sec = 1;
       solid.push([x0 - .1, z - .65, x0 + L + .1, z + .65]);
       RK[c] = { x0: x0, z: z, L: L, D: D, tiers: [.34, 1.44, 2.54, 3.64] };
     });
@@ -181,8 +181,8 @@
     box(6, .2, 2.6, 0xa07a4a, bx0, 1.52, bz0); box(6.1, .06, 2.7, 0x6b4a2b, bx0, 1.4, bz0);
     [[-2.8, -1.1], [2.8, -1.1], [-2.8, 1.1], [2.8, 1.1]].forEach(function (p) { box(.2, 1.5, .2, 0x3a4250, bx0 + p[0], .75, bz0 + p[1]); });
     box(5.6, .08, 2.2, 0x555b63, bx0, .5, bz0);
-    box(1.5, 1.0, 2.2, 0x4a5460, bx0 + 2.0, .95, bz0);
-    for (var d = 0; d < 3; d++) { box(1.4, .28, .04, 0x6c7684, bx0 + 2.0, .55 + d * .32, bz0 - 1.12); box(.5, .05, .06, 0xd9d9d9, bx0 + 2.0, .62 + d * .32, bz0 - 1.16); }
+    // (тумба с ящиками под верстаком убрана)
+
     box(3.6, .03, 1.4, 0x2f7a3a, bx0 - .6, 1.64, bz0 + .1);                       // антистатический коврик
     box(.5, .5, .5, 0x3a3f47, bx0 - 2.5, 1.9, bz0 + .5);                           // тиски
     box(.1, 1.5, .1, 0x888888, bx0 - 2.6, 2.3, bz0 - .8); box(1.0, .1, .1, 0x888888, bx0 - 2.1, 3.0, bz0 - .8); box(.6, .15, .5, 0xfff2c0, bx0 - 1.7, 2.95, bz0 - .8); // лампа
