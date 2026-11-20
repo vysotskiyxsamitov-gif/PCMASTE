@@ -11,14 +11,14 @@
   function cv(w, h, f) { var c = document.createElement('canvas'); c.width = w; c.height = h; f(c.getContext('2d'), w, h); var t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; }
   function nz(g,w,h,n,a){for(var i=0;i<n;i++){g.fillStyle='rgba('+(Math.random()<.5?'255,255,255':'0,0,0')+','+Math.random()*a+')';g.fillRect(Math.random()*w,Math.random()*h,2,2);}}
   var wallT = cv(512, 512, function (g, w, h) {
-    g.fillStyle = '#d8d1c2'; g.fillRect(0, 0, w, h);
+    g.fillStyle = '#bf9a72'; g.fillRect(0, 0, w, h);
     for (var i = 0; i < 2600; i++) { g.fillStyle = 'rgba(' + (Math.random() < .5 ? '255,255,255' : '90,70,40') + ',' + Math.random() * .035 + ')'; g.fillRect(Math.random() * w, Math.random() * h, 1 + Math.random() * 3, 1 + Math.random() * 40); }
     // (панели и плинтус убраны)
     // (панели и плинтус убраны)
     // (панели и плинтус убраны)
     // (панели и плинтус убраны)
     // (панели и плинтус убраны)
-    // (панели и плинтус убраны)
+    g.fillStyle = '#5a3f2a'; g.fillRect(0, h - 22, w, 22); g.fillStyle = 'rgba(255,230,190,.22)'; g.fillRect(0, h - 22, w, 2);   // плинтус только на стене (в проёмах стен нет — не режет проходы)
     g.fillStyle = 'rgba(0,0,0,.18)'; g.fillRect(0, 0, w, 10);                                                           // тень у потолка
   });
   var floorT = cv(512, 512, function (g, w, h) {
@@ -56,7 +56,7 @@
   var gl = new THREE.Mesh(new THREE.PlaneGeometry(19, 3.1), new THREE.MeshBasicMaterial({ color: 0x9cc8e0, transparent: true, opacity: .12, depthWrite: false })); gl.position.set(3.8, 3.6, 8); 
   // свет: по комнатам
   [[0, 5.4, 3, 1.1, 26], [0, 5.3, -13.5, .9, 22], [-6, 5.3, -25, .8, 16], [8, 5.3, -25, .8, 16], [-8, 5.3, -13.5, .6, 14]].forEach(function (p) { var l = new THREE.PointLight(0xfff0d8, p[3]*.8, p[4], 1.6); l.position.set(p[0], p[1], p[2]); grp.add(l); });
-  var amb = new THREE.AmbientLight(0xffffff, .38); grp.add(amb);
+  var amb = new THREE.AmbientLight(0xffffff, .32); grp.add(amb);
   window.__r2solid = solid;
   // коллизии: стены новой комнаты + старая мебель (прилавок, верстак, стеллаж, терминал) — она осталась на месте
   window.__r2solid = solid;

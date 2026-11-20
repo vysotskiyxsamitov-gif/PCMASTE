@@ -16,7 +16,7 @@
     clearInterval(iv);
     try {
       var g = window.__room2, G0 = geo();
-      var mats = COL.map(function (c, i) { return new THREE.MeshStandardMaterial({ color: c, roughness: RGH[i], metalness: i === 2 ? .8 : 0 }); });
+      var mats = COL.map(function (c, i) { return new THREE.MeshLambertMaterial({ color: c }); });
       // x, z (центр в зале), угол: спинка по умолчанию смотрит в -z (к задней стене)
       [[-9.5, -9.08, 0], [-12.08, -6.5, Math.PI / 2]].forEach(function (p) {
         var m = new THREE.Mesh(G0, mats); m.name = 'R2SOFA';

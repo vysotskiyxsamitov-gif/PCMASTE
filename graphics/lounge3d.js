@@ -26,7 +26,7 @@
       Object.keys(M).forEach(function (k) {
         G[k] = geo(M[k]);
         MT[k] = M[k].c.map(function (c, i) {
-          var mat = new THREE.MeshStandardMaterial({ color: c, roughness: (ROUGH[k] || [])[i] == null ? .7 : ROUGH[k][i], metalness: k === 'FloorLamp' && i === 1 ? .8 : 0, side: k === 'Plant' && i >= 2 ? THREE.DoubleSide : THREE.FrontSide });
+          var mat = new THREE.MeshLambertMaterial({ color: c, side: k === 'Plant' && i >= 2 ? THREE.DoubleSide : THREE.FrontSide });
           if (k === 'FloorLamp' && i === 2) { mat.emissive = new THREE.Color(0xffc870); mat.emissiveIntensity = .55; }
           return mat;
         });
