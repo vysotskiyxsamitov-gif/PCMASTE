@@ -30,7 +30,6 @@
     var mm = new THREE.Mesh(new THREE.PlaneGeometry(3.6, 1.8), new THREE.MeshLambertMaterial({ map: mat })); mm.rotation.x = -Math.PI / 2; mm.position.set(-10.3, Y + .03, 6.2); g.add(mm);
     // подушки на диванах и растения
     function plant(x, z, s) { cyl(x, Y + .6 * s, z, .42 * s, 1.2 * s, 0xd8d3c8); for (var i = 0; i < 9; i++) { var a = i * 2.4; ball(x + Math.cos(a) * .35 * s, Y + (1.5 + (i % 4) * .35) * s, z + Math.sin(a) * .35 * s, .38 * s, [0x2f7d3a, 0x3f9a48, 0x276a30][i % 3]); } }
-    plant(-2.7, -9.1, 1); plant(-2.9, 6.3, 1); plant(12.2, 6.8, 1.1); plant(-12.2, 7.0, 1);
     // указатель «ВЫХОД», огнетушитель, информационная доска
     plane(1.4, .5, sign('ВЫХОД', '', '#0b6b2e', '#14a34a', 1.4, .5), -10.3, 5.9, 8.0 - .25, Math.PI);
     // жалюзи на среднем окне (верхняя треть)
